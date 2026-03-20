@@ -13,3 +13,7 @@ ANTHROPIC_API_KEY=your-api-key-here
 # 模型 ID（必填）
 # 推荐: claude-sonnet-4-20250514
 # MODEL_ID=claude-sonnet-4-20250514
+
+# 是否打印请求/响应报文（可选，默认 false）
+# 设为 true 可用于调试和学习 API 交互过程
+DEBUG_PRINT_PAYLOAD=false

@@ -60,6 +60,9 @@ public class AnthropicClient {
     /** 模型 ID，如 "claude-sonnet-4-20250514"，决定了使用哪个版本的 Claude */
     private final String model;
 
+    /** 是否打印请求/响应报文，用于调试，默认 false */
+    private final boolean debugPrintPayload;
+
     /**
      * Gson 实例，开启 PrettyPrinting 是为了调试时日志可读性更好。
      * 设为 static final 是因为 Gson 是线程安全的，全局共享一个实例即可。
@@ -136,6 +139,8 @@ public class AnthropicClient {
         this.apiKey = getConfig("ANTHROPIC_API_KEY",
                 getConfig("ANTHROPIC_AUTH_TOKEN", ""));
         this.model = getConfig("MODEL_ID", "");
+        // 读取调试开关，默认不打印报文
+        this.debugPrintPayload = Boolean.parseBoolean(getConfig("DEBUG_PRINT_PAYLOAD", "false"));
 
         // 启动时打印配置来源，方便调试 —— 生产环境中应该用日志框架替代 System.out
         // 注意：API Key 只打印前 8 位，这是安全最佳实践，防止密钥泄露到日志中
@@ -143,6 +148,7 @@ public class AnthropicClient {
         System.out.println("[AnthropicClient] model    = " + model);
         System.out.println("[AnthropicClient] api_key  = " +
                 (apiKey.isEmpty() ? "(NOT SET!)" : apiKey.substring(0, Math.min(8, apiKey.length())) + "..."));
+        System.out.println("[AnthropicClient] debug    = " + debugPrintPayload);
     }
 
     public String getModel() {
@@ -236,7 +242,9 @@ public class AnthropicClient {
             }
 
             // ===== 发送请求体 =====
-            System.out.println("=====请求报文=====\n"+jsonBody.toString());
+            if (debugPrintPayload) {
+                System.out.println("=====请求报文=====\n" + jsonBody);
+            }
             byte[] bodyBytes = jsonBody.getBytes(StandardCharsets.UTF_8);
             conn.setRequestProperty("Content-Length", String.valueOf(bodyBytes.length));
             try (OutputStream os = conn.getOutputStream()) {
@@ -263,14 +271,16 @@ public class AnthropicClient {
             if (status < 200 || status >= 300) {
                 throw new RuntimeException("API Error (HTTP " + status + "): " + sb.toString());
             }
-            // 格式化 JSON 响应报文
+            // 格式化 JSON 响应报文（仅在调试模式下打印）
             String responseStr = sb.toString();
-            try {
-                JsonObject responseJson = JsonParser.parseString(responseStr).getAsJsonObject();
-                System.out.println("=====响应报文=====\n" + GSON.toJson(responseJson));
-            } catch (Exception e) {
-                // JSON 解析失败时直接输出原始字符串
-                System.out.println("=====响应报文=====\n" + responseStr);
+            if (debugPrintPayload) {
+                try {
+                    JsonObject responseJson = JsonParser.parseString(responseStr).getAsJsonObject();
+                    System.out.println("=====响应报文=====\n" + GSON.toJson(responseJson));
+                } catch (Exception e) {
+                    // JSON 解析失败时直接输出原始字符串
+                    System.out.println("=====响应报文=====\n" + responseStr);
+                }
             }
             return responseStr;
 
