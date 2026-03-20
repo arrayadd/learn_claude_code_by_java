@@ -1,0 +1,15 @@
+# Claude Code Demo 配置文件示例
+# 复制此文件为 claude.properties 并填入你的配置
+#
+
+# Anthropic API Key（必填）
+# 从 https://console.anthropic.com/ 获取
+ANTHROPIC_API_KEY=your-api-key-here
+
+# API 地址（可选，默认官方地址）
+# 使用第三方代理或兼容服务时修改
+# ANTHROPIC_BASE_URL=https://api.anthropic.com
+
+# 模型 ID（必填）
+# 推荐: claude-sonnet-4-20250514
+# MODEL_ID=claude-sonnet-4-20250514

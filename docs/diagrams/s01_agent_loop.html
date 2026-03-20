@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S01 - Agent Loop 核心循环</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg-deep: #111827;
+    --bg-card: rgba(26, 34, 52, 0.7);
+    --bg-card-hover: rgba(32, 42, 64, 0.85);
+    --border-card: rgba(240, 180, 41, 0.15);
+    --border-card-hover: rgba(240, 180, 41, 0.4);
+    --amber: #f0b429;
+    --amber-light: #ffd166;
+    --cyan: #4ecdc4;
+    --cyan-dim: rgba(78, 205, 196, 0.3);
+    --text-primary: #e8e6e3;
+    --text-secondary: #8a8f98;
+    --text-dim: #4a5068;
+    --glow-amber: 0 0 30px rgba(240, 180, 41, 0.25);
+    --glow-cyan: 0 0 30px rgba(78, 205, 196, 0.2);
+    --font-code: 'JetBrains Mono', monospace;
+    --font-heading: 'Outfit', sans-serif;
+  }
+
+  [data-theme="light"] {
+    --bg-deep: #f8f6f1;
+    --bg-card: rgba(255, 255, 255, 0.85);
+    --bg-card-hover: rgba(255, 255, 255, 0.95);
+    --border-card: rgba(160, 120, 20, 0.18);
+    --border-card-hover: rgba(160, 120, 20, 0.4);
+    --amber: #b8860b;
+    --amber-light: #996600;
+    --cyan: #0d7377;
+    --cyan-dim: rgba(13, 115, 119, 0.2);
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a4a5e;
+    --text-dim: #7a7a8e;
+    --glow-amber: 0 0 20px rgba(184, 134, 11, 0.1);
+    --glow-cyan: 0 0 20px rgba(13, 115, 119, 0.1);
+  }
+
+  [data-theme="light"] body::before {
+    background-image:
+      linear-gradient(rgba(160, 120, 20, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(160, 120, 20, 0.06) 1px, transparent 1px);
+  }
+
+  [data-theme="light"] body::after {
+    background: radial-gradient(ellipse at 20% 50%, rgba(13, 115, 119, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(184, 134, 11, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(13, 115, 119, 0.04) 0%, transparent 50%);
+  }
+
+  /* Theme toggle button */
+  .theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 999;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--border-card);
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    box-shadow: var(--glow-amber);
+  }
+  .theme-toggle:hover {
+    border-color: var(--amber);
+    transform: scale(1.1);
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--font-heading);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(240, 180, 41, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(240, 180, 41, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Noise texture */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 20% 50%, rgba(78, 205, 196, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(240, 180, 41, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(78, 205, 196, 0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px 24px 80px;
+  }
+
+  /* ---- Title Section ---- */
+  .title-section {
+    text-align: center;
+    margin-bottom: 64px;
+  }
+
+  .lesson-badge {
+    display: inline-block;
+    font-family: var(--font-code);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--amber);
+    background: rgba(240, 180, 41, 0.1);
+    border: 1px solid rgba(240, 180, 41, 0.25);
+    border-radius: 20px;
+    padding: 6px 18px;
+    margin-bottom: 20px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .title-section h1 {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: clamp(32px, 5vw, 56px);
+    line-height: 1.15;
+    background: linear-gradient(135deg, var(--amber-light) 0%, var(--amber) 50%, var(--cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+
+  .title-section .subtitle {
+    font-size: clamp(16px, 2.2vw, 22px);
+    font-weight: 300;
+    color: var(--text-secondary);
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .subtitle code {
+    font-family: var(--font-code);
+    font-size: 0.85em;
+    color: var(--cyan);
+    background: rgba(78, 205, 196, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  /* ---- SVG Diagram ---- */
+  .diagram-wrapper {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 16px;
+    padding: 40px 20px;
+    margin-bottom: 64px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--glow-amber);
+    overflow: visible;
+  }
+
+  .diagram-wrapper h2 {
+    font-family: var(--font-code);
+    font-size: 14px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .diagram-svg {
+    display: block;
+    width: 100%;
+    min-height: 520px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  /* SVG Animations */
+  @keyframes dashFlow {
+    to { stroke-dashoffset: -40; }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; r: 60; }
+    50% { opacity: 0.8; r: 72; }
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% { filter: drop-shadow(0 0 8px rgba(240, 180, 41, 0.3)); }
+    50% { filter: drop-shadow(0 0 24px rgba(240, 180, 41, 0.7)); }
+  }
+
+  @keyframes nodeAppear {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .flow-line {
+    stroke-dasharray: 12 8;
+    animation: dashFlow 1.2s linear infinite;
+  }
+
+  .flow-line-reverse {
+    stroke-dasharray: 12 8;
+    animation: dashFlow 1.2s linear infinite reverse;
+  }
+
+  .pulse-ring {
+    animation: pulse 2.5s ease-in-out infinite;
+  }
+
+  .node-group {
+    animation: nodeAppear 0.6s ease-out both;
+  }
+  .node-group:nth-child(2) { animation-delay: 0.15s; }
+  .node-group:nth-child(3) { animation-delay: 0.30s; }
+  .node-group:nth-child(4) { animation-delay: 0.45s; }
+  .node-group:nth-child(5) { animation-delay: 0.60s; }
+
+  .llm-group {
+    animation: pulseGlow 3s ease-in-out infinite;
+  }
+
+  /* ---- Concept Cards ---- */
+  .cards-section {
+    margin-bottom: 64px;
+  }
+
+  .cards-section > h2 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 28px;
+    color: var(--text-primary);
+    margin-bottom: 32px;
+    padding-left: 16px;
+    border-left: 3px solid var(--amber);
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 14px;
+    padding: 32px 28px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    transition: all 0.35s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--amber), var(--cyan));
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+
+  .card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-card-hover);
+    transform: translateY(-4px);
+    box-shadow: var(--glow-amber);
+  }
+
+  .card:hover::before { opacity: 1; }
+
+  .card-number {
+    font-family: var(--font-code);
+    font-size: 12px;
+    color: var(--amber);
+    opacity: 0.6;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  .card h3 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--amber-light);
+    margin-bottom: 12px;
+  }
+
+  .card .cn {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 8px;
+  }
+
+  .card .en {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  .card code {
+    font-family: var(--font-code);
+    font-size: 0.85em;
+    color: var(--cyan);
+    background: rgba(78, 205, 196, 0.08);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  /* ---- Code Mapping Table ---- */
+  .table-section {
+    margin-bottom: 64px;
+  }
+
+  .table-section > h2 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 28px;
+    color: var(--text-primary);
+    margin-bottom: 32px;
+    padding-left: 16px;
+    border-left: 3px solid var(--cyan);
+  }
+
+  .table-wrapper {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 14px;
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    font-family: var(--font-code);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--amber);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    text-align: left;
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(240, 180, 41, 0.15);
+    background: rgba(240, 180, 41, 0.04);
+  }
+
+  tbody td {
+    font-family: var(--font-code);
+    font-size: 13px;
+    padding: 14px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    vertical-align: top;
+  }
+
+  tbody tr:hover {
+    background: rgba(240, 180, 41, 0.04);
+  }
+
+  tbody td:first-child {
+    color: var(--text-secondary);
+  }
+
+  tbody td:nth-child(2) {
+    color: var(--cyan);
+  }
+
+  tbody td:nth-child(3) {
+    color: var(--amber-light);
+  }
+
+  tbody td:last-child {
+    color: var(--text-dim);
+    font-family: var(--font-heading);
+    font-size: 13px;
+  }
+
+  /* ---- Navigation ---- */
+  .nav-hint {
+    text-align: center;
+    padding: 48px 20px;
+    border-top: 1px solid rgba(240, 180, 41, 0.08);
+  }
+
+  .nav-hint a {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--cyan);
+    text-decoration: none;
+    padding: 14px 32px;
+    border: 1px solid var(--cyan-dim);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+  }
+
+  .nav-hint a:hover {
+    background: rgba(78, 205, 196, 0.08);
+    border-color: var(--cyan);
+    box-shadow: var(--glow-cyan);
+    transform: translateX(4px);
+  }
+
+  .nav-hint a .arrow {
+    transition: transform 0.3s;
+  }
+
+  .nav-hint a:hover .arrow {
+    transform: translateX(4px);
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .container { padding: 32px 16px 60px; }
+    .cards-grid { grid-template-columns: 1fr; }
+    .diagram-wrapper { padding: 20px 10px; }
+    thead th, tbody td { padding: 10px 14px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" title="Toggle light/dark theme" onclick="toggleTheme()">🌙</button>
+<div class="container">
+
+  <!-- Title -->
+  <section class="title-section">
+    <div class="lesson-badge">Lesson 01</div>
+    <h1>Agent Loop 核心循环</h1>
+    <p class="subtitle">整个 AI 编程 Agent 的秘密就在一个 <code>while</code> 循环里</p>
+  </section>
+
+  <!-- Main SVG Diagram -->
+  <section class="diagram-wrapper">
+    <h2>// Architecture Diagram</h2>
+    <svg class="diagram-svg" viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrowCyan" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#4ecdc4"/>
+        </marker>
+        <marker id="arrowAmber" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#f0b429"/>
+        </marker>
+        <filter id="glowAmber">
+          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feFlood flood-color="#f0b429" flood-opacity="0.4"/>
+          <feComposite in2="blur" operator="in"/>
+          <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glowCyan">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feFlood flood-color="#4ecdc4" flood-opacity="0.35"/>
+          <feComposite in2="blur" operator="in"/>
+          <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <linearGradient id="gradAmber" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f0b429"/>
+          <stop offset="100%" stop-color="#ffd166"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Loop boundary -->
+      <rect x="195" y="80" width="570" height="370" rx="20" fill="none" stroke="rgba(240,180,41,0.1)" stroke-width="1.5" stroke-dasharray="6 4"/>
+      <text x="480" y="110" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="rgba(240,180,41,0.35)" letter-spacing="2">WHILE LOOP: stopReason == "tool_use"</text>
+
+      <!-- Flow lines -->
+      <!-- User → LLM -->
+      <line x1="110" y1="260" x2="280" y2="260" stroke="#4ecdc4" stroke-width="2" class="flow-line" marker-end="url(#arrowCyan)"/>
+
+      <!-- LLM → Tool -->
+      <line x1="440" y1="260" x2="560" y2="260" stroke="#4ecdc4" stroke-width="2" class="flow-line" marker-end="url(#arrowCyan)"/>
+      <text x="500" y="248" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(78,205,196,0.6)">tool_use</text>
+
+      <!-- Tool → loop back arc -->
+      <path d="M 680 300 Q 680 420 480 420 Q 280 420 280 300" fill="none" stroke="#f0b429" stroke-width="2" class="flow-line-reverse" marker-end="url(#arrowAmber)"/>
+      <text x="480" y="445" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="rgba(240,180,41,0.55)">tool_result → messages.append()</text>
+
+      <!-- LLM → Output (exit) -->
+      <line x1="360" y1="220" x2="360" y2="140" stroke="#4ecdc4" stroke-width="1.5" stroke-dasharray="4 6"/>
+      <line x1="360" y1="140" x2="810" y2="140" stroke="#4ecdc4" stroke-width="2" class="flow-line" marker-end="url(#arrowCyan)"/>
+      <text x="560" y="132" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(78,205,196,0.5)">stop_reason != "tool_use"</text>
+
+      <!-- Node: User Input -->
+      <g class="node-group">
+        <rect x="30" y="228" width="160" height="64" rx="10" fill="rgba(16,22,36,0.9)" stroke="#4ecdc4" stroke-width="1.5"/>
+        <text x="110" y="255" text-anchor="middle" font-family="Outfit, sans-serif" font-weight="700" font-size="15" fill="#e8e6e3">User Input</text>
+        <text x="110" y="275" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#8a8f98">用户输入</text>
+      </g>
+
+      <!-- Node: LLM (with pulse) -->
+      <g class="node-group llm-group">
+        <circle cx="360" cy="260" r="60" fill="rgba(240,180,41,0.06)" stroke="none" class="pulse-ring"/>
+        <rect x="290" y="228" width="140" height="64" rx="12" fill="rgba(240,180,41,0.1)" stroke="url(#gradAmber)" stroke-width="2" filter="url(#glowAmber)"/>
+        <text x="360" y="254" text-anchor="middle" font-family="Outfit, sans-serif" font-weight="800" font-size="17" fill="#ffd166">LLM</text>
+        <text x="360" y="274" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#f0b429">Claude API</text>
+      </g>
+
+      <!-- Node: Tool Execute -->
+      <g class="node-group">
+        <rect x="570" y="228" width="160" height="64" rx="10" fill="rgba(16,22,36,0.9)" stroke="#4ecdc4" stroke-width="1.5" filter="url(#glowCyan)"/>
+        <text x="650" y="254" text-anchor="middle" font-family="Outfit, sans-serif" font-weight="700" font-size="15" fill="#e8e6e3">Tool Execute</text>
+        <text x="650" y="274" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#8a8f98">工具执行</text>
+      </g>
+
+      <!-- Node: Output Result -->
+      <g class="node-group">
+        <rect x="780" y="108" width="150" height="64" rx="10" fill="rgba(78,205,196,0.08)" stroke="#4ecdc4" stroke-width="2"/>
+        <text x="855" y="135" text-anchor="middle" font-family="Outfit, sans-serif" font-weight="700" font-size="15" fill="#4ecdc4">Output</text>
+        <text x="855" y="155" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#8a8f98">输出结果</text>
+      </g>
+
+      <!-- Step labels -->
+      <text x="220" y="195" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" fill="rgba(240,180,41,0.15)" font-weight="700">01</text>
+      <text x="510" y="195" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" fill="rgba(240,180,41,0.15)" font-weight="700">02</text>
+      <text x="690" y="380" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" fill="rgba(240,180,41,0.15)" font-weight="700">03</text>
+    </svg>
+  </section>
+
+  <!-- Key Concept Cards -->
+  <section class="cards-section">
+    <h2>Key Concepts 核心概念</h2>
+    <div class="cards-grid">
+
+      <div class="card">
+        <div class="card-number">01</div>
+        <h3>核心模式 Core Pattern</h3>
+        <p class="cn">整个 Agent 的核心就是 <code>while(stopReason == "tool_use")</code>。循环条件由模型的返回值决定，不是硬编码的。</p>
+        <p class="en">The entire agent is driven by a single while loop. The loop condition is determined by the model's stop_reason, not hardcoded logic.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-number">02</div>
+        <h3>三步循环 Three-Step Loop</h3>
+        <p class="cn">每一轮循环只做三件事：发送消息给模型 → 执行模型要求的工具 → 把结果塞回对话历史。</p>
+        <p class="en">Each iteration: send messages to API, execute requested tool, append tool_result back to conversation history.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-number">03</div>
+        <h3>模型即 Agent</h3>
+        <p class="cn">循环本身只是"传话员"。真正做决策的是模型——它决定用什么工具、何时停止。Agent 代码不做任何决策。</p>
+        <p class="en">The loop is just a messenger. The model decides which tools to call and when to stop. Zero decision logic in the agent code.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Navigation -->
+  <nav class="nav-hint" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+    <a href="s00_prerequisites.html">
+      <span class="arrow">&larr;</span>
+      S00 Prerequisites
+    </a>
+    <a href="index.html" style="color:var(--amber,#f0b429);text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:13px;padding:6px 14px;border-radius:6px;border:1px solid rgba(240,180,41,0.2);">⌂ 首页</a>
+    <a href="s02_tool_dispatch.html">
+      S02 Tool Dispatch
+      <span class="arrow">&rarr;</span>
+    </a>
+  </nav>
+
+</div>
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  if (html.getAttribute('data-theme') === 'light') {
+    html.removeAttribute('data-theme');
+    btn.textContent = '🌙';
+    localStorage.setItem('theme', 'dark');
+  } else {
+    html.setAttribute('data-theme', 'light');
+    btn.textContent = '☀️';
+    localStorage.setItem('theme', 'light');
+  }
+}
+(function() {
+  if (localStorage.getItem('theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    var btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = '☀️';
+  }
+})();
+</script>
+</body>
+</html>

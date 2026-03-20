@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S09 - Agent Teams 代理团队</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;600;700;800&display=swap');
+
+:root {
+  --bg: #111827;
+  --bg-card: rgba(26, 34, 52, 0.7);
+  --border-card: rgba(240, 180, 41, 0.15);
+  --amber: #f0b429;
+  --amber-light: #ffd166;
+  --cyan: #4ecdc4;
+  --cyan-dim: rgba(78, 205, 196, 0.3);
+  --text: #e0e0e0;
+  --text-dim: #8899aa;
+  --glass-bg: rgba(15, 22, 40, 0.6);
+  --glass-border: rgba(240, 180, 41, 0.12);
+}
+
+  [data-theme="light"] {
+    --bg-deep: #f8f6f1;
+    --bg-card: rgba(255, 255, 255, 0.85);
+    --bg-card-hover: rgba(255, 255, 255, 0.95);
+    --border-card: rgba(160, 120, 20, 0.18);
+    --border-card-hover: rgba(160, 120, 20, 0.4);
+    --amber: #b8860b;
+    --amber-light: #996600;
+    --cyan: #0d7377;
+    --cyan-dim: rgba(13, 115, 119, 0.2);
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a4a5e;
+    --text-dim: #7a7a8e;
+    --glow-amber: 0 0 20px rgba(184, 134, 11, 0.1);
+    --glow-cyan: 0 0 20px rgba(13, 115, 119, 0.1);
+  }
+
+  [data-theme="light"] body::before {
+    background-image:
+      linear-gradient(rgba(160, 120, 20, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(160, 120, 20, 0.06) 1px, transparent 1px);
+  }
+
+  [data-theme="light"] body::after {
+    background: radial-gradient(ellipse at 20% 50%, rgba(13, 115, 119, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(184, 134, 11, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(13, 115, 119, 0.04) 0%, transparent 50%);
+  }
+
+  .theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 999;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--border-card);
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    box-shadow: var(--glow-amber);
+  }
+  .theme-toggle:hover {
+    border-color: var(--amber);
+    transform: scale(1.1);
+  }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(240,180,41,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(240,180,41,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.badge {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--amber);
+  background: rgba(240,180,41,0.1);
+  border: 1px solid rgba(240,180,41,0.25);
+  border-radius: 20px;
+  padding: 4px 16px;
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+
+h1 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: clamp(28px, 5vw, 48px);
+  background: linear-gradient(135deg, var(--amber), var(--amber-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: clamp(16px, 2.5vw, 22px);
+  color: var(--text-dim);
+  font-weight: 300;
+}
+
+/* SVG diagram container */
+.diagram-wrap {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+  backdrop-filter: blur(12px);
+  margin-bottom: 48px;
+  overflow-x: auto;
+}
+
+.diagram-wrap svg {
+  display: block;
+  margin: 0 auto;
+}
+
+/* Animated dashes */
+@keyframes dashFlow {
+  to { stroke-dashoffset: -40; }
+}
+@keyframes dashFlowReverse {
+  to { stroke-dashoffset: 40; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.flow-line {
+  stroke-dasharray: 8 6;
+  animation: dashFlow 1.2s linear infinite;
+}
+.flow-line-rev {
+  stroke-dasharray: 8 6;
+  animation: dashFlowReverse 1.2s linear infinite;
+}
+.pulse-node {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Cards */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 28px;
+  backdrop-filter: blur(12px);
+  transition: transform 0.3s, border-color 0.3s;
+  animation: fadeSlideUp 0.6s ease both;
+}
+.card:nth-child(2) { animation-delay: 0.12s; }
+.card:nth-child(3) { animation-delay: 0.24s; }
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(240,180,41,0.35);
+}
+
+.card-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--cyan);
+  margin-bottom: 8px;
+}
+
+.card h3 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--amber-light);
+  margin-bottom: 10px;
+}
+
+.card p {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-dim);
+}
+
+.card code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--cyan);
+  background: rgba(78,205,196,0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* Comparison table */
+.compare-section {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 28px;
+  backdrop-filter: blur(12px);
+  margin-bottom: 48px;
+}
+
+.compare-section h2 {
+  font-size: 22px;
+  color: var(--amber-light);
+  margin-bottom: 18px;
+  font-weight: 700;
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.compare-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(240,180,41,0.15);
+}
+
+.compare-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--text-dim);
+}
+
+.compare-table tr:hover td {
+  background: rgba(240,180,41,0.03);
+}
+
+/* Nav */
+.nav-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 24px;
+  border-top: 1px solid rgba(240,180,41,0.1);
+}
+
+.nav-bottom a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--cyan);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.nav-bottom a:hover {
+  color: var(--amber-light);
+}
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" title="Toggle light/dark theme" onclick="toggleTheme()">🌙</button>
+<div class="container">
+
+<header>
+  <div class="badge">SESSION 09</div>
+  <h1>Agent Teams 代理团队</h1>
+  <p class="subtitle">能互相交谈的队友 &mdash; Teammates That Talk to Each Other</p>
+</header>
+
+<!-- Main Diagram -->
+<div class="diagram-wrap">
+<svg viewBox="0 0 1100 620" width="100%" xmlns="http://www.w3.org/2000/svg" style="min-width:800px">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <marker id="arrowAmber" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#f0b429"/>
+    </marker>
+    <marker id="arrowCyan" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#4ecdc4"/>
+    </marker>
+  </defs>
+
+  <!-- Background label -->
+  <text x="550" y="30" text-anchor="middle" fill="rgba(240,180,41,0.15)" font-family="Outfit" font-size="16" font-weight="700">AGENT TEAM ARCHITECTURE</text>
+
+  <!-- .team/config.json box -->
+  <rect x="30" y="60" width="180" height="90" rx="10" fill="rgba(78,205,196,0.06)" stroke="#4ecdc4" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="120" y="88" text-anchor="middle" fill="#4ecdc4" font-family="JetBrains Mono" font-size="11" font-weight="700">.team/config.json</text>
+  <text x="120" y="110" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="10">agents: [lead,</text>
+  <text x="120" y="124" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="10">  alice, bob]</text>
+  <text x="120" y="140" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="10">roles &amp; permissions</text>
+
+  <!-- Config arrow to Lead -->
+  <line x1="210" y1="105" x2="280" y2="105" stroke="#4ecdc4" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arrowCyan)"/>
+
+  <!-- Lead Thread Box -->
+  <rect x="290" y="50" width="220" height="140" rx="12" fill="rgba(240,180,41,0.05)" stroke="#f0b429" stroke-width="2"/>
+  <rect x="290" y="50" width="220" height="32" rx="12" fill="rgba(240,180,41,0.12)"/>
+  <text x="400" y="72" text-anchor="middle" fill="#ffd166" font-family="Outfit" font-size="15" font-weight="700">Lead (主线程)</text>
+  <circle cx="312" cy="67" r="5" fill="#f0b429" class="pulse-node"/>
+  <!-- Loop inside -->
+  <rect x="305" y="96" width="190" height="26" rx="6" fill="rgba(240,180,41,0.06)" stroke="rgba(240,180,41,0.2)" stroke-width="1"/>
+  <text x="400" y="114" text-anchor="middle" fill="#e0e0e0" font-family="JetBrains Mono" font-size="10">Agent Loop (LLM+Tools)</text>
+  <rect x="305" y="132" width="190" height="26" rx="6" fill="rgba(78,205,196,0.06)" stroke="rgba(78,205,196,0.2)" stroke-width="1"/>
+  <text x="400" y="150" text-anchor="middle" fill="#4ecdc4" font-family="JetBrains Mono" font-size="10">inbox: lead.jsonl</text>
+  <text x="305" y="178" fill="#8899aa" font-family="JetBrains Mono" font-size="9">spawns &amp; coordinates teammates</text>
+
+  <!-- Alice Thread Box -->
+  <rect x="610" y="50" width="220" height="140" rx="12" fill="rgba(240,180,41,0.05)" stroke="#f0b429" stroke-width="1.5"/>
+  <rect x="610" y="50" width="220" height="32" rx="12" fill="rgba(240,180,41,0.08)"/>
+  <text x="720" y="72" text-anchor="middle" fill="#ffd166" font-family="Outfit" font-size="15" font-weight="700">Alice (队友线程)</text>
+  <circle cx="632" cy="67" r="5" fill="#4ecdc4" class="pulse-node"/>
+  <rect x="625" y="96" width="190" height="26" rx="6" fill="rgba(240,180,41,0.06)" stroke="rgba(240,180,41,0.2)" stroke-width="1"/>
+  <text x="720" y="114" text-anchor="middle" fill="#e0e0e0" font-family="JetBrains Mono" font-size="10">Agent Loop (LLM+Tools)</text>
+  <rect x="625" y="132" width="190" height="26" rx="6" fill="rgba(78,205,196,0.06)" stroke="rgba(78,205,196,0.2)" stroke-width="1"/>
+  <text x="720" y="150" text-anchor="middle" fill="#4ecdc4" font-family="JetBrains Mono" font-size="10">inbox: alice.jsonl</text>
+  <text x="625" y="178" fill="#8899aa" font-family="JetBrains Mono" font-size="9">persistent, autonomous</text>
+
+  <!-- Bob Thread Box -->
+  <rect x="880" y="50" width="200" height="140" rx="12" fill="rgba(240,180,41,0.05)" stroke="#f0b429" stroke-width="1.5"/>
+  <rect x="880" y="50" width="200" height="32" rx="12" fill="rgba(240,180,41,0.08)"/>
+  <text x="980" y="72" text-anchor="middle" fill="#ffd166" font-family="Outfit" font-size="15" font-weight="700">Bob (队友线程)</text>
+  <circle cx="902" cy="67" r="5" fill="#4ecdc4" class="pulse-node"/>
+  <rect x="895" y="96" width="170" height="26" rx="6" fill="rgba(240,180,41,0.06)" stroke="rgba(240,180,41,0.2)" stroke-width="1"/>
+  <text x="980" y="114" text-anchor="middle" fill="#e0e0e0" font-family="JetBrains Mono" font-size="10">Agent Loop (LLM+Tools)</text>
+  <rect x="895" y="132" width="170" height="26" rx="6" fill="rgba(78,205,196,0.06)" stroke="rgba(78,205,196,0.2)" stroke-width="1"/>
+  <text x="980" y="150" text-anchor="middle" fill="#4ecdc4" font-family="JetBrains Mono" font-size="10">inbox: bob.jsonl</text>
+  <text x="895" y="178" fill="#8899aa" font-family="JetBrains Mono" font-size="9">persistent, autonomous</text>
+
+  <!-- Message flow arrows (animated) -->
+  <!-- Lead -> Alice -->
+  <path d="M510,100 Q560,80 610,100" fill="none" stroke="#f0b429" stroke-width="1.5" class="flow-line" marker-end="url(#arrowAmber)"/>
+  <text x="560" y="76" text-anchor="middle" fill="#f0b429" font-family="JetBrains Mono" font-size="9" opacity="0.7">message</text>
+
+  <!-- Alice -> Lead -->
+  <path d="M610,155 Q560,180 510,155" fill="none" stroke="#4ecdc4" stroke-width="1.5" class="flow-line-rev" marker-end="url(#arrowCyan)"/>
+  <text x="560" y="192" text-anchor="middle" fill="#4ecdc4" font-family="JetBrains Mono" font-size="9" opacity="0.7">response</text>
+
+  <!-- Lead -> Bob -->
+  <path d="M510,120 Q700,40 880,100" fill="none" stroke="#f0b429" stroke-width="1.5" class="flow-line" marker-end="url(#arrowAmber)"/>
+
+  <!-- Bob -> Lead -->
+  <path d="M880,155 Q700,220 510,145" fill="none" stroke="#4ecdc4" stroke-width="1.5" class="flow-line-rev" marker-end="url(#arrowCyan)"/>
+
+  <!-- Alice <-> Bob -->
+  <path d="M830,120 Q855,120 880,120" fill="none" stroke="#ffd166" stroke-width="1.2" class="flow-line" marker-end="url(#arrowAmber)"/>
+
+  <!-- JSONL Inbox Section -->
+  <rect x="30" y="230" width="1040" height="150" rx="12" fill="rgba(78,205,196,0.03)" stroke="rgba(78,205,196,0.15)" stroke-width="1"/>
+  <text x="60" y="258" fill="#4ecdc4" font-family="Outfit" font-size="16" font-weight="700">.team/inbox/ (JSONL Mailboxes)</text>
+
+  <!-- JSONL files -->
+  <rect x="60" y="275" width="300" height="85" rx="8" fill="rgba(26,34,52,0.8)" stroke="rgba(240,180,41,0.15)" stroke-width="1"/>
+  <text x="80" y="296" fill="#ffd166" font-family="JetBrains Mono" font-size="11" font-weight="600">lead.jsonl</text>
+  <text x="80" y="314" fill="#8899aa" font-family="JetBrains Mono" font-size="10">{"from":"alice","type":"message","body":"done"}</text>
+  <text x="80" y="330" fill="#8899aa" font-family="JetBrains Mono" font-size="10">{"from":"bob","type":"message","body":"help!"}</text>
+  <text x="80" y="348" fill="rgba(240,180,41,0.3)" font-family="JetBrains Mono" font-size="9">append-only write, drain on read</text>
+
+  <rect x="390" y="275" width="300" height="85" rx="8" fill="rgba(26,34,52,0.8)" stroke="rgba(240,180,41,0.15)" stroke-width="1"/>
+  <text x="410" y="296" fill="#ffd166" font-family="JetBrains Mono" font-size="11" font-weight="600">alice.jsonl</text>
+  <text x="410" y="314" fill="#8899aa" font-family="JetBrains Mono" font-size="10">{"from":"lead","type":"message","body":"fix auth"}</text>
+  <text x="410" y="330" fill="#8899aa" font-family="JetBrains Mono" font-size="10">{"from":"bob","type":"broadcast","body":"..."}</text>
+  <text x="410" y="348" fill="rgba(78,205,196,0.3)" font-family="JetBrains Mono" font-size="9">file = mailbox, thread-safe by design</text>
+
+  <rect x="720" y="275" width="300" height="85" rx="8" fill="rgba(26,34,52,0.8)" stroke="rgba(240,180,41,0.15)" stroke-width="1"/>
+  <text x="740" y="296" fill="#ffd166" font-family="JetBrains Mono" font-size="11" font-weight="600">bob.jsonl</text>
+  <text x="740" y="314" fill="#8899aa" font-family="JetBrains Mono" font-size="10">{"from":"lead","type":"message","body":"..."}</text>
+  <text x="740" y="330" fill="#8899aa" font-family="JetBrains Mono" font-size="10">{"from":"alice","type":"message","body":"..."}</text>
+  <text x="740" y="348" fill="rgba(78,205,196,0.3)" font-family="JetBrains Mono" font-size="9">each agent drains its own mailbox</text>
+
+  <!-- Contrast section: Subagent vs Teammate -->
+  <text x="550" y="420" text-anchor="middle" fill="rgba(240,180,41,0.2)" font-family="Outfit" font-size="14" font-weight="600">LIFECYCLE COMPARISON</text>
+
+  <!-- Subagent lifecycle -->
+  <rect x="60" y="440" width="460" height="80" rx="10" fill="rgba(240,180,41,0.03)" stroke="rgba(240,180,41,0.12)" stroke-width="1"/>
+  <text x="80" y="462" fill="#f0b429" font-family="Outfit" font-size="14" font-weight="700">Subagent (S04)</text>
+  <!-- spawn -> execute -> destroy -->
+  <rect x="80" y="475" width="70" height="28" rx="6" fill="rgba(240,180,41,0.12)"/><text x="115" y="494" text-anchor="middle" fill="#ffd166" font-family="JetBrains Mono" font-size="11">spawn</text>
+  <line x1="155" y1="489" x2="195" y2="489" stroke="#f0b429" stroke-width="1.5" marker-end="url(#arrowAmber)"/>
+  <rect x="200" y="475" width="80" height="28" rx="6" fill="rgba(240,180,41,0.12)"/><text x="240" y="494" text-anchor="middle" fill="#ffd166" font-family="JetBrains Mono" font-size="11">execute</text>
+  <line x1="285" y1="489" x2="325" y2="489" stroke="#f0b429" stroke-width="1.5" marker-end="url(#arrowAmber)"/>
+  <rect x="330" y="475" width="80" height="28" rx="6" fill="rgba(255,80,80,0.12)"/><text x="370" y="494" text-anchor="middle" fill="#ff6b6b" font-family="JetBrains Mono" font-size="11">destroy</text>
+  <text x="440" y="494" fill="#8899aa" font-family="JetBrains Mono" font-size="10">one-shot</text>
+
+  <!-- Teammate lifecycle -->
+  <rect x="560" y="440" width="480" height="80" rx="10" fill="rgba(78,205,196,0.03)" stroke="rgba(78,205,196,0.12)" stroke-width="1"/>
+  <text x="580" y="462" fill="#4ecdc4" font-family="Outfit" font-size="14" font-weight="700">Teammate (S09)</text>
+  <rect x="580" y="475" width="62" height="28" rx="6" fill="rgba(78,205,196,0.12)"/><text x="611" y="494" text-anchor="middle" fill="#4ecdc4" font-family="JetBrains Mono" font-size="11">spawn</text>
+  <line x1="647" y1="489" x2="670" y2="489" stroke="#4ecdc4" stroke-width="1.5" marker-end="url(#arrowCyan)"/>
+  <rect x="675" y="475" width="55" height="28" rx="6" fill="rgba(78,205,196,0.12)"/><text x="702" y="494" text-anchor="middle" fill="#4ecdc4" font-family="JetBrains Mono" font-size="11">work</text>
+  <line x1="735" y1="489" x2="758" y2="489" stroke="#4ecdc4" stroke-width="1.5" marker-end="url(#arrowCyan)"/>
+  <rect x="763" y="475" width="50" height="28" rx="6" fill="rgba(78,205,196,0.08)"/><text x="788" y="494" text-anchor="middle" fill="#4ecdc4" font-family="JetBrains Mono" font-size="11">idle</text>
+  <line x1="818" y1="489" x2="841" y2="489" stroke="#4ecdc4" stroke-width="1.5" marker-end="url(#arrowCyan)"/>
+  <rect x="846" y="475" width="55" height="28" rx="6" fill="rgba(78,205,196,0.12)"/><text x="873" y="494" text-anchor="middle" fill="#4ecdc4" font-family="JetBrains Mono" font-size="11">work</text>
+  <line x1="906" y1="489" x2="929" y2="489" stroke="#4ecdc4" stroke-width="1.5" marker-end="url(#arrowCyan)"/>
+  <rect x="934" y="475" width="76" height="28" rx="6" fill="rgba(78,205,196,0.08)"/><text x="972" y="494" text-anchor="middle" fill="#4ecdc4" font-family="JetBrains Mono" font-size="11">shutdown</text>
+  <!-- idle loop arrow -->
+  <path d="M788,475 Q788,455 830,455 Q845,455 845,475" fill="none" stroke="rgba(78,205,196,0.4)" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arrowCyan)"/>
+  <text x="820" y="450" text-anchor="middle" fill="rgba(78,205,196,0.5)" font-family="JetBrains Mono" font-size="8">resume</text>
+
+  <!-- 5 message types -->
+  <rect x="60" y="545" width="980" height="55" rx="10" fill="rgba(240,180,41,0.03)" stroke="rgba(240,180,41,0.1)" stroke-width="1"/>
+  <text x="80" y="570" fill="#f0b429" font-family="Outfit" font-size="13" font-weight="700">5 Message Types:</text>
+  <rect x="225" y="555" width="90" height="26" rx="5" fill="rgba(240,180,41,0.1)"/><text x="270" y="573" text-anchor="middle" fill="#ffd166" font-family="JetBrains Mono" font-size="10">message</text>
+  <rect x="330" y="555" width="100" height="26" rx="5" fill="rgba(240,180,41,0.1)"/><text x="380" y="573" text-anchor="middle" fill="#ffd166" font-family="JetBrains Mono" font-size="10">broadcast</text>
+  <rect x="445" y="555" width="150" height="26" rx="5" fill="rgba(255,80,80,0.08)"/><text x="520" y="573" text-anchor="middle" fill="#ff6b6b" font-family="JetBrains Mono" font-size="10">shutdown_request</text>
+  <rect x="610" y="555" width="162" height="26" rx="5" fill="rgba(78,205,196,0.08)"/><text x="691" y="573" text-anchor="middle" fill="#4ecdc4" font-family="JetBrains Mono" font-size="10">shutdown_response</text>
+  <rect x="787" y="555" width="130" height="26" rx="5" fill="rgba(78,205,196,0.08)"/><text x="852" y="573" text-anchor="middle" fill="#4ecdc4" font-family="JetBrains Mono" font-size="10">plan_approval</text>
+</svg>
+</div>
+
+<!-- Concept Cards -->
+<div class="cards">
+  <div class="card">
+    <div class="card-num">CONCEPT 01</div>
+    <h3>持久化队友 Persistent Teammates</h3>
+    <p>不同于 Subagent 的一次性 spawn-execute-destroy 模式，Teammate 会一直存在，在 <code>WORK</code> 和 <code>IDLE</code> 之间切换，直到被明确要求关闭。这意味着它们保持上下文、保持状态。</p>
+  </div>
+  <div class="card">
+    <div class="card-num">CONCEPT 02</div>
+    <h3>JSONL 邮箱 Mailbox Mechanism</h3>
+    <p>文件就是邮箱。每个 Agent 有自己的 <code>.jsonl</code> 文件，写入用 append（天然线程安全），读取用 drain（读完清空）。无需数据库，无需锁，文件系统就是消息队列。</p>
+  </div>
+  <div class="card">
+    <div class="card-num">CONCEPT 03</div>
+    <h3>5 种消息类型 Message Types</h3>
+    <p>通信协议精简为 5 种类型：<code>message</code>（点对点）、<code>broadcast</code>（广播）、<code>shutdown_request</code> / <code>shutdown_response</code>（关闭协商）、<code>plan_approval</code>（计划审批）。</p>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="nav-hint" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+  <a href="s08_background_tasks.html">
+    <span class="arrow">&larr;</span>
+    S08 Background Tasks
+  </a>
+  <a href="index.html" style="color:var(--amber,#f0b429);text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:13px;padding:6px 14px;border-radius:6px;border:1px solid rgba(240,180,41,0.2);">⌂ 首页</a>
+  <a href="s10_team_protocols.html">
+    S10 Team Protocols
+    <span class="arrow">&rarr;</span>
+  </a>
+</nav>
+
+</div>
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  if (html.getAttribute('data-theme') === 'light') {
+    html.removeAttribute('data-theme');
+    btn.textContent = '🌙';
+    localStorage.setItem('theme', 'dark');
+  } else {
+    html.setAttribute('data-theme', 'light');
+    btn.textContent = '☀️';
+    localStorage.setItem('theme', 'light');
+  }
+}
+(function() {
+  if (localStorage.getItem('theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    var btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = '☀️';
+  }
+})();
+</script>
+</body>
+</html>

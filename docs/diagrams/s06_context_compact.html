@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S06 - Context Compact 上下文压缩</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;600;700;800&display=swap');
+
+:root {
+  --bg-deep: #111827;
+  --bg-card: rgba(255,255,255,0.04);
+  --bg-card-hover: rgba(255,255,255,0.08);
+  --border-card: rgba(255,255,255,0.08);
+  --amber: #f0b429;
+  --amber-light: #ffd166;
+  --cyan: #4ecdc4;
+  --cyan-dim: rgba(78,205,196,0.3);
+  --text-primary: #e8e6e3;
+  --text-secondary: #8a8f98;
+  --text-dim: #4a4f58;
+  --glass-bg: rgba(26,32,50,0.75);
+  --glass-border: rgba(255,255,255,0.1);
+  --glow-amber: 0 0 30px rgba(240,180,41,0.15);
+  --glow-cyan: 0 0 30px rgba(78,205,196,0.15);
+}
+
+  [data-theme="light"] {
+    --bg-deep: #f8f6f1;
+    --bg-card: rgba(255, 255, 255, 0.85);
+    --bg-card-hover: rgba(255, 255, 255, 0.95);
+    --border-card: rgba(160, 120, 20, 0.18);
+    --border-card-hover: rgba(160, 120, 20, 0.4);
+    --amber: #b8860b;
+    --amber-light: #996600;
+    --cyan: #0d7377;
+    --cyan-dim: rgba(13, 115, 119, 0.2);
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a4a5e;
+    --text-dim: #7a7a8e;
+    --glow-amber: 0 0 20px rgba(184, 134, 11, 0.1);
+    --glow-cyan: 0 0 20px rgba(13, 115, 119, 0.1);
+  }
+
+  [data-theme="light"] body::before {
+    background-image:
+      linear-gradient(rgba(160, 120, 20, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(160, 120, 20, 0.06) 1px, transparent 1px);
+  }
+
+  [data-theme="light"] body::after {
+    background: radial-gradient(ellipse at 20% 50%, rgba(13, 115, 119, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(184, 134, 11, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(13, 115, 119, 0.04) 0%, transparent 50%);
+  }
+
+  .theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 999;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--border-card);
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    box-shadow: var(--glow-amber);
+  }
+  .theme-toggle:hover {
+    border-color: var(--amber);
+    transform: scale(1.1);
+  }
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(ellipse at 60% 30%, rgba(78,205,196,0.04) 0%, transparent 50%),
+              radial-gradient(ellipse at 30% 70%, rgba(240,180,41,0.03) 0%, transparent 50%);
+  z-index: 0;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 60px;
+}
+
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 48px;
+  padding: 16px 24px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+}
+
+nav a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+nav a:hover {
+  color: var(--amber);
+  background: rgba(240,180,41,0.1);
+}
+
+nav .current {
+  color: var(--amber);
+  background: rgba(240,180,41,0.1);
+  border: 1px solid rgba(240,180,41,0.2);
+}
+
+header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+header .lesson-tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--cyan);
+  background: rgba(78,205,196,0.1);
+  border: 1px solid rgba(78,205,196,0.2);
+  padding: 4px 14px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+header h1 {
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--cyan), var(--amber-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+
+header .subtitle {
+  font-size: clamp(16px, 2.5vw, 20px);
+  color: var(--text-secondary);
+  font-weight: 300;
+}
+
+.diagram-wrapper {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 48px;
+  box-shadow: var(--glow-cyan);
+  overflow-x: auto;
+}
+
+.diagram-wrapper h2 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--cyan);
+  margin-bottom: 24px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+svg text { font-family: 'Outfit', sans-serif; }
+svg .mono { font-family: 'JetBrains Mono', monospace; }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 48px;
+}
+
+.card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 28px;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--cyan), var(--amber));
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(78,205,196,0.2);
+  transform: translateY(-4px);
+  box-shadow: var(--glow-cyan);
+}
+
+.card:hover::before { opacity: 1; }
+
+.card .card-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--amber);
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+
+.card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--amber-light);
+  margin-bottom: 10px;
+}
+
+.card p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+@keyframes flowDown {
+  0% { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes shrinkBar {
+  0% { width: 260px; }
+  100% { width: 60px; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(78,205,196,0.3)); }
+  50% { filter: drop-shadow(0 0 14px rgba(78,205,196,0.7)); }
+}
+
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes compressAnim {
+  0% { transform: scaleY(1); }
+  50% { transform: scaleY(0.4); }
+  100% { transform: scaleY(1); }
+}
+
+.anim-flow-line {
+  stroke-dasharray: 8 4;
+  animation: flowDown 0.8s linear infinite;
+}
+
+.anim-pulse { animation: pulseGlow 2.5s ease-in-out infinite; }
+
+.anim-fadein { animation: fadeInUp 0.8s ease-out forwards; }
+.anim-fadein-d1 { animation-delay: 0.1s; opacity: 0; }
+.anim-fadein-d2 { animation-delay: 0.3s; opacity: 0; }
+.anim-fadein-d3 { animation-delay: 0.5s; opacity: 0; }
+.anim-fadein-d4 { animation-delay: 0.7s; opacity: 0; }
+
+.compress-box {
+  animation: compressAnim 3s ease-in-out infinite;
+  transform-origin: center center;
+}
+
+@media (max-width: 768px) {
+  .container { padding: 20px 12px 40px; }
+  nav { flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .diagram-wrapper { padding: 16px; }
+  .cards { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" title="Toggle light/dark theme" onclick="toggleTheme()">🌙</button>
+<div class="container">
+
+<header>
+  <div class="lesson-tag">Lesson 06</div>
+  <h1>Context Compact 上下文压缩</h1>
+  <p class="subtitle">Agent 可以策略性遗忘，从而永远工作下去</p>
+</header>
+
+<div class="diagram-wrapper">
+  <h2>// Three-Layer Pipeline 三层压缩管道</h2>
+  <svg viewBox="0 0 1100 820" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:800px;">
+    <defs>
+      <filter id="glow-c2">
+        <feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <marker id="arr-c" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="10" markerHeight="7" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#4ecdc4"/>
+      </marker>
+      <marker id="arr-a" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="10" markerHeight="7" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#f0b429"/>
+      </marker>
+      <linearGradient id="g-layer1" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="rgba(78,205,196,0.12)"/>
+        <stop offset="100%" stop-color="rgba(78,205,196,0.03)"/>
+      </linearGradient>
+      <linearGradient id="g-layer2" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="rgba(240,180,41,0.12)"/>
+        <stop offset="100%" stop-color="rgba(240,180,41,0.03)"/>
+      </linearGradient>
+      <linearGradient id="g-layer3" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="rgba(220,100,200,0.12)"/>
+        <stop offset="100%" stop-color="rgba(220,100,200,0.03)"/>
+      </linearGradient>
+    </defs>
+
+    <!-- === LAYER 1: micro_compact === -->
+    <g class="anim-fadein anim-fadein-d1">
+      <rect x="80" y="30" width="540" height="170" rx="14" fill="url(#g-layer1)" stroke="#4ecdc4" stroke-width="1.5"/>
+      <text x="100" y="62" fill="#4ecdc4" font-size="18" font-weight="700">Layer 1: micro_compact</text>
+      <text x="340" y="62" fill="#8a8f98" font-size="13">微压缩 (silent, every turn)</text>
+
+      <!-- Before/After -->
+      <text x="100" y="95" fill="#e8e6e3" font-size="12" font-weight="600">Before 压缩前:</text>
+      <rect x="100" y="103" width="260" height="20" rx="4" fill="rgba(220,60,60,0.15)"/>
+      <rect x="100" y="103" width="260" height="20" rx="4" fill="rgba(220,60,60,0.12)" stroke="rgba(220,60,60,0.3)" stroke-width="1"/>
+      <text x="110" y="118" fill="#ff6b6b" font-size="11" class="mono">tool_result: { ...5000 chars... }</text>
+
+      <text x="100" y="148" fill="#e8e6e3" font-size="12" font-weight="600">After 压缩后:</text>
+      <rect x="100" y="156" width="130" height="20" rx="4" fill="rgba(78,205,196,0.15)" stroke="rgba(78,205,196,0.3)" stroke-width="1"/>
+      <text x="110" y="171" fill="#4ecdc4" font-size="11" class="mono">[placeholder]</text>
+
+      <text x="400" y="148" fill="#8a8f98" font-size="11" class="mono">// Replace old tool_result</text>
+      <text x="400" y="168" fill="#8a8f98" font-size="11" class="mono">// with short placeholder</text>
+    </g>
+
+    <!-- Arrow Layer1 → Decision -->
+    <line x1="350" y1="205" x2="350" y2="260" stroke="#4ecdc4" stroke-width="2" marker-end="url(#arr-c)" class="anim-flow-line"/>
+    <text x="365" y="238" fill="#8a8f98" font-size="11" class="mono">every turn</text>
+
+    <!-- Decision Diamond -->
+    <g class="anim-fadein anim-fadein-d2">
+      <polygon points="350,265 490,330 350,395 210,330" fill="rgba(240,180,41,0.06)" stroke="#f0b429" stroke-width="1.5" class="anim-pulse"/>
+      <text x="290" y="326" fill="#f0b429" font-size="14" font-weight="600" class="mono">tokens</text>
+      <text x="285" y="346" fill="#f0b429" font-size="14" font-weight="600" class="mono">&gt; 50000?</text>
+    </g>
+
+    <!-- YES arrow down -->
+    <line x1="350" y1="400" x2="350" y2="445" stroke="#f0b429" stroke-width="2" marker-end="url(#arr-a)" class="anim-flow-line"/>
+    <text x="365" y="425" fill="#ffd166" font-size="12" font-weight="600">YES</text>
+
+    <!-- NO arrow right -->
+    <line x1="495" y1="330" x2="555" y2="330" stroke="#8a8f98" stroke-width="1.5" stroke-dasharray="5 3"/>
+    <text x="510" y="322" fill="#8a8f98" font-size="12">NO</text>
+    <rect x="560" y="310" width="130" height="40" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+    <text x="578" y="335" fill="#8a8f98" font-size="12">Continue 继续</text>
+
+    <!-- === LAYER 2: auto_compact === -->
+    <g class="anim-fadein anim-fadein-d3">
+      <rect x="80" y="450" width="540" height="170" rx="14" fill="url(#g-layer2)" stroke="#f0b429" stroke-width="1.5"/>
+      <text x="100" y="482" fill="#f0b429" font-size="18" font-weight="700">Layer 2: auto_compact</text>
+      <text x="355" y="482" fill="#8a8f98" font-size="13">自动压缩 (threshold triggered)</text>
+
+      <!-- Steps -->
+      <rect x="100" y="498" width="150" height="34" rx="8" fill="rgba(240,180,41,0.08)" stroke="rgba(240,180,41,0.2)" stroke-width="1"/>
+      <text x="115" y="520" fill="#ffd166" font-size="12" class="mono">save transcript</text>
+
+      <text x="260" y="520" fill="#4ecdc4" font-size="16">&#8594;</text>
+
+      <rect x="280" y="498" width="150" height="34" rx="8" fill="rgba(240,180,41,0.08)" stroke="rgba(240,180,41,0.2)" stroke-width="1"/>
+      <text x="295" y="520" fill="#ffd166" font-size="12" class="mono">LLM summarize</text>
+
+      <text x="440" y="520" fill="#4ecdc4" font-size="16">&#8594;</text>
+
+      <rect x="460" y="498" width="140" height="34" rx="8" fill="rgba(240,180,41,0.08)" stroke="rgba(240,180,41,0.2)" stroke-width="1"/>
+      <text x="482" y="520" fill="#ffd166" font-size="12" class="mono">replace all</text>
+
+      <!-- Before/After size -->
+      <rect x="100" y="555" width="220" height="44" rx="8" fill="rgba(26,32,50,0.8)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+      <text x="115" y="574" fill="#ff6b6b" font-size="11" class="mono">Before: ~80000 tokens</text>
+      <text x="115" y="592" fill="#4ecdc4" font-size="11" class="mono">After:  ~12000 tokens</text>
+
+      <rect x="345" y="555" width="255" height="44" rx="8" fill="rgba(26,32,50,0.8)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+      <text x="360" y="574" fill="#8a8f98" font-size="11" class="mono">Summary preserves:</text>
+      <text x="360" y="592" fill="#ffd166" font-size="11" class="mono">key decisions + current task</text>
+    </g>
+
+    <!-- Arrow Layer2 → Layer3 -->
+    <line x1="350" y1="625" x2="350" y2="670" stroke="#4ecdc4" stroke-width="1.5" stroke-dasharray="6 3" marker-end="url(#arr-c)"/>
+    <text x="365" y="652" fill="#8a8f98" font-size="11" class="mono">or model decides</text>
+
+    <!-- === LAYER 3: compact tool === -->
+    <g class="anim-fadein anim-fadein-d4">
+      <rect x="80" y="675" width="540" height="120" rx="14" fill="url(#g-layer3)" stroke="#c084fc" stroke-width="1.5"/>
+      <text x="100" y="707" fill="#c084fc" font-size="18" font-weight="700">Layer 3: compact tool</text>
+      <text x="350" y="707" fill="#8a8f98" font-size="13">手动压缩 (model-triggered)</text>
+
+      <rect x="100" y="722" width="500" height="50" rx="8" fill="rgba(26,32,50,0.8)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+      <text x="120" y="744" fill="#c084fc" font-size="12" class="mono">Model calls: compact(summary="We finished auth module,</text>
+      <text x="120" y="762" fill="#c084fc" font-size="12" class="mono">  now working on dashboard. Key files: ...")</text>
+    </g>
+
+    <!-- Right side: key insight -->
+    <g transform="translate(700, 420)">
+      <rect width="350" height="170" rx="14" fill="rgba(26,32,50,0.85)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+      <text x="20" y="35" fill="#4ecdc4" font-size="14" font-weight="700">Key Insight 关键洞察</text>
+      <text x="20" y="65" fill="#e8e6e3" font-size="13" line-height="1.6">"Strategic forgetting"</text>
+      <text x="20" y="85" fill="#8a8f98" font-size="13">"策略性遗忘"</text>
+      <text x="20" y="115" fill="#8a8f98" font-size="12">The agent keeps working forever by</text>
+      <text x="20" y="133" fill="#8a8f98" font-size="12">intelligently compressing its memory.</text>
+      <text x="20" y="158" fill="#ffd166" font-size="12" class="mono">infinite context = finite window</text>
+    </g>
+  </svg>
+</div>
+
+<div class="cards">
+  <div class="card">
+    <div class="card-num">LAYER 01</div>
+    <h3>微压缩 micro_compact</h3>
+    <p>每轮静默执行。把旧的 tool_result 替换为短占位符，只保留最新一轮的完整结果。用户无感知，但持续节省 token。</p>
+    <p style="margin-top:10px;color:var(--cyan);font-size:13px;font-family:'JetBrains Mono',monospace;">silent, every turn, no LLM call</p>
+  </div>
+  <div class="card">
+    <div class="card-num">LAYER 02</div>
+    <h3>自动压缩 auto_compact</h3>
+    <p>当 token 数超过阈值(如 50000)时触发。保存完整 transcript 到文件，用 LLM 生成摘要替换所有消息，保留关键决策和当前任务。</p>
+    <p style="margin-top:10px;color:var(--amber);font-size:13px;font-family:'JetBrains Mono',monospace;">threshold: 50000 tokens</p>
+  </div>
+  <div class="card">
+    <div class="card-num">LAYER 03</div>
+    <h3>手动压缩 compact tool</h3>
+    <p>模型主动调用 compact 工具，附带自己的总结。适合完成大阶段性工作后主动清理上下文。模型知道什么重要、什么可以忘记。</p>
+    <p style="margin-top:10px;color:#c084fc;font-size:13px;font-family:'JetBrains Mono',monospace;">model-triggered, with custom summary</p>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="nav-hint" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+  <a href="s05_skill_loading.html">
+    <span class="arrow">&larr;</span>
+    S05 Skill Loading
+  </a>
+  <a href="index.html" style="color:var(--amber,#f0b429);text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:13px;padding:6px 14px;border-radius:6px;border:1px solid rgba(240,180,41,0.2);">⌂ 首页</a>
+  <a href="s07_task_system.html">
+    S07 Task System
+    <span class="arrow">&rarr;</span>
+  </a>
+</nav>
+
+</div>
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  if (html.getAttribute('data-theme') === 'light') {
+    html.removeAttribute('data-theme');
+    btn.textContent = '🌙';
+    localStorage.setItem('theme', 'dark');
+  } else {
+    html.setAttribute('data-theme', 'light');
+    btn.textContent = '☀️';
+    localStorage.setItem('theme', 'light');
+  }
+}
+(function() {
+  if (localStorage.getItem('theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    var btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = '☀️';
+  }
+})();
+</script>
+</body>
+</html>

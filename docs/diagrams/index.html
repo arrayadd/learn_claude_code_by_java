@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learn Claude Code - Java Edition</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;600;700;800;900&display=swap');
+
+  :root {
+    --bg-deep: #111827;
+    --bg-card: rgba(26, 34, 52, 0.7);
+    --bg-card-hover: rgba(32, 42, 64, 0.85);
+    --border-card: rgba(240, 180, 41, 0.12);
+    --border-card-hover: rgba(240, 180, 41, 0.4);
+    --amber: #f0b429;
+    --amber-light: #ffd166;
+    --amber-dim: rgba(240, 180, 41, 0.08);
+    --cyan: #4ecdc4;
+    --cyan-dim: rgba(78, 205, 196, 0.15);
+    --text-primary: #e8e6e3;
+    --text-secondary: #8a8f98;
+    --text-dim: #4a5068;
+    --glow-amber: 0 0 30px rgba(240, 180, 41, 0.15);
+    --glow-cyan: 0 0 25px rgba(78, 205, 196, 0.12);
+    --font-code: 'JetBrains Mono', monospace;
+    --font-heading: 'Outfit', sans-serif;
+  }
+
+  [data-theme="light"] {
+    --bg-deep: #f8f6f1;
+    --bg-card: rgba(255, 255, 255, 0.85);
+    --bg-card-hover: rgba(255, 255, 255, 0.95);
+    --border-card: rgba(160, 120, 20, 0.18);
+    --border-card-hover: rgba(160, 120, 20, 0.4);
+    --amber: #b8860b;
+    --amber-light: #996600;
+    --amber-dim: rgba(184, 134, 11, 0.06);
+    --cyan: #0d7377;
+    --cyan-dim: rgba(13, 115, 119, 0.12);
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a4a5e;
+    --text-dim: #7a7a8e;
+    --glow-amber: 0 0 20px rgba(184, 134, 11, 0.08);
+    --glow-cyan: 0 0 20px rgba(13, 115, 119, 0.08);
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--font-heading);
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(240, 180, 41, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(240, 180, 41, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  [data-theme="light"] body::before {
+    background-image:
+      linear-gradient(rgba(160, 120, 20, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(160, 120, 20, 0.06) 1px, transparent 1px);
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 20% 30%, rgba(78, 205, 196, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 60%, rgba(240, 180, 41, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  [data-theme="light"] body::after {
+    background: radial-gradient(ellipse at 20% 30%, rgba(13, 115, 119, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 60%, rgba(184, 134, 11, 0.06) 0%, transparent 50%);
+  }
+
+  /* Theme toggle */
+  .theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 999;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--border-card);
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    box-shadow: var(--glow-amber);
+  }
+  .theme-toggle:hover {
+    border-color: var(--amber);
+    transform: scale(1.1);
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 60px 24px 80px;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    margin-bottom: 80px;
+    padding-top: 20px;
+  }
+
+  .hero-badge {
+    display: inline-block;
+    font-family: var(--font-code);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--cyan);
+    background: var(--cyan-dim);
+    border: 1px solid rgba(78, 205, 196, 0.2);
+    border-radius: 20px;
+    padding: 6px 18px;
+    margin-bottom: 28px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  [data-theme="light"] .hero-badge {
+    border-color: rgba(13, 115, 119, 0.3);
+  }
+
+  .hero h1 {
+    font-weight: 900;
+    font-size: clamp(36px, 6vw, 68px);
+    line-height: 1.1;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--amber-light) 0%, var(--amber) 40%, var(--cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero .version {
+    font-family: var(--font-code);
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+    letter-spacing: 1px;
+  }
+
+  .hero .desc {
+    font-size: clamp(16px, 2vw, 20px);
+    font-weight: 300;
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  .hero .desc code {
+    font-family: var(--font-code);
+    font-size: 0.85em;
+    color: var(--cyan);
+    background: var(--cyan-dim);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  /* Phase labels */
+  .phase {
+    margin-bottom: 48px;
+  }
+
+  .phase-label {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-left: 4px;
+  }
+
+  .phase-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border-card-hover), transparent);
+  }
+
+  .phase-tag {
+    font-family: var(--font-code);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--amber);
+    background: var(--amber-dim);
+    border: 1px solid rgba(240, 180, 41, 0.15);
+    border-radius: 6px;
+    padding: 4px 14px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  [data-theme="light"] .phase-tag {
+    border-color: rgba(160, 120, 20, 0.25);
+  }
+
+  /* Lesson cards grid */
+  .lessons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+  }
+
+  .lesson-card {
+    position: relative;
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 14px;
+    padding: 28px 26px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.35s ease;
+    overflow: hidden;
+    animation: cardIn 0.5s ease-out both;
+  }
+
+  .lesson-card:nth-child(1) { animation-delay: 0.05s; }
+  .lesson-card:nth-child(2) { animation-delay: 0.10s; }
+  .lesson-card:nth-child(3) { animation-delay: 0.15s; }
+  .lesson-card:nth-child(4) { animation-delay: 0.20s; }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .lesson-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--amber), var(--cyan));
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+
+  .lesson-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-card-hover);
+    transform: translateY(-6px);
+    box-shadow: var(--glow-amber);
+  }
+
+  .lesson-card:hover::before { opacity: 1; }
+
+  .lesson-card .num {
+    font-family: var(--font-code);
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--amber);
+    opacity: 0.12;
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    line-height: 1;
+  }
+
+  .lesson-card .tag {
+    font-family: var(--font-code);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--cyan);
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .lesson-card h3 {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .lesson-card .zh {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 6px;
+  }
+
+  .lesson-card .insight {
+    font-family: var(--font-code);
+    font-size: 12px;
+    color: var(--text-dim);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  .lesson-card .arrow-icon {
+    position: absolute;
+    bottom: 20px;
+    right: 22px;
+    font-size: 18px;
+    color: var(--cyan);
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: all 0.3s ease;
+  }
+
+  .lesson-card:hover .arrow-icon {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* Philosophy section */
+  .philosophy {
+    margin-bottom: 72px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 16px;
+    padding: 40px 36px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .philosophy::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--amber), var(--cyan), var(--amber));
+  }
+
+  .philosophy h2 {
+    font-weight: 800;
+    font-size: 24px;
+    color: var(--text-primary);
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .philosophy h2 .icon {
+    font-size: 28px;
+  }
+
+  .philosophy .core-idea {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--amber-light);
+    line-height: 1.5;
+    margin-bottom: 20px;
+    padding-left: 16px;
+    border-left: 3px solid var(--amber);
+  }
+
+  .philosophy .explain {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    margin-bottom: 16px;
+  }
+
+  .philosophy .explain strong {
+    color: var(--text-primary);
+  }
+
+  .philosophy .formula {
+    font-family: var(--font-code);
+    font-size: 13px;
+    line-height: 1.9;
+    color: var(--cyan);
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+  }
+
+  [data-theme="light"] .philosophy .formula {
+    background: rgba(0,0,0,0.04);
+  }
+
+  .philosophy .formula .label { color: var(--amber-light); }
+  .philosophy .formula .dim { color: var(--text-dim); }
+
+  .philosophy .motto {
+    font-family: var(--font-code);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--amber);
+    text-align: center;
+    margin-top: 24px;
+    letter-spacing: 0.5px;
+    opacity: 0.85;
+  }
+
+  /* Run command section */
+  .run-section {
+    margin-top: 64px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 14px;
+    padding: 36px 32px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .run-section h2 {
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    padding-left: 14px;
+    border-left: 3px solid var(--amber);
+  }
+
+  .run-code {
+    font-family: var(--font-code);
+    font-size: 13px;
+    line-height: 2;
+    color: var(--text-secondary);
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+    padding: 20px 24px;
+    overflow-x: auto;
+  }
+
+  [data-theme="light"] .run-code {
+    background: rgba(0,0,0,0.04);
+  }
+
+  .run-code .comment { color: var(--text-dim); }
+  .run-code .cmd { color: var(--cyan); }
+  .run-code .arg { color: var(--amber-light); }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    margin-top: 64px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border-card);
+    font-family: var(--font-code);
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 2;
+  }
+
+  .footer a {
+    color: var(--cyan);
+    text-decoration: none;
+  }
+  .footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 640px) {
+    .container { padding: 32px 16px 60px; }
+    .lessons-grid { grid-template-columns: 1fr; }
+    .run-code { font-size: 11px; padding: 14px 16px; }
+  }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" title="Toggle light/dark theme" onclick="toggleTheme()">&#127769;</button>
+
+<div class="container">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">Java Edition &middot; JDK 1.8</div>
+    <h1>Learn Claude Code</h1>
+    <p class="version">learn_claude_code_by_java v1.0</p>
+    <p class="version" style="color:var(--amber);opacity:0.7;">Created by arrayadd </p>
+    <p class="desc">
+      12 节渐进式课程，从一个 <code>while</code> 循环到完整的多 Agent 团队系统。<br>
+      每一课都是独立的 <code>main()</code> 方法，运行即学。
+    </p>
+  </section>
+
+  <!-- Core Philosophy -->
+  <section class="philosophy">
+    <h2><span class="icon">&#9672;</span> Core Philosophy 核心哲学</h2>
+
+    <p class="core-idea">Agent 是模型。不是框架。不是提示词链。不是拖拽式工作流。</p>
+
+    <p class="explain">
+      <strong>模型做决策，Harness 执行。</strong>模型做推理，Harness 提供上下文。模型是驾驶者，Harness 是载具。
+      你不是在编写智能——你是在构建智能栖居的世界。
+    </p>
+
+    <p class="explain">
+      Claude Code 是我们所见过的最优雅的 agent harness 实现。它没有试图成为 agent 本身，没有强加僵化的工作流，
+      没有用决策树替模型做判断——它给模型提供了工具、知识、上下文管理和权限边界，然后让开了。
+    </p>
+
+    <div class="formula">
+<span class="label">Harness</span> = Tools + Knowledge + Observation + Action + Permissions
+<span class="dim">         文件读写   产品文档     git diff     CLI命令    沙箱隔离
+         Shell     领域资料     错误日志     API调用    审批流程
+         网络      API规范     浏览器状态    UI交互     信任边界</span>
+    </div>
+
+    <p class="explain">
+      本教程的 12 节课，每一课在同一个 <strong>while 循环</strong>之上叠加一个 harness 机制。
+      循环属于 Agent，机制属于 Harness。循环始终不变——变的是你给 Agent 的能力边界。
+    </p>
+
+    <p class="motto">"造好 Harness，Agent 会完成剩下的。"</p>
+  </section>
+
+  <!-- Architecture Overview Diagram -->
+  <section class="philosophy" style="padding: 36px 24px;">
+    <h2><span class="icon">&#9881;</span> Architecture Map 架构全景</h2>
+    <p class="explain" style="margin-bottom:24px;">一个 while 循环 + 12 层 Harness 机制 = 完整的 Agent 系统。下图展示核心循环与各机制的关系。</p>
+
+    <svg viewBox="0 0 900 620" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:900px;margin:0 auto;display:block;">
+      <defs>
+        <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="none" stroke="var(--amber)" stroke-width="1.2"/>
+        </marker>
+        <marker id="ah-cyan" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="none" stroke="var(--cyan)" stroke-width="1.2"/>
+        </marker>
+        <filter id="glow-a"><feGaussianBlur stdDeviation="3" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+
+      <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+        <path d="M 30 0 L 0 0 0 30" fill="none" stroke="var(--text-dim)" stroke-width="0.15" opacity="0.4"/>
+      </pattern>
+      <rect width="900" height="620" fill="url(#grid)" rx="12"/>
+
+      <!-- Central Agent Loop -->
+      <rect x="310" y="22" width="280" height="96" rx="12" fill="var(--bg-card)" stroke="var(--amber)" stroke-width="2" filter="url(#glow-a)"/>
+      <text x="450" y="52" text-anchor="middle" fill="var(--amber)" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700">THE AGENT LOOP</text>
+      <text x="450" y="74" text-anchor="middle" fill="var(--text-secondary)" font-family="JetBrains Mono, monospace" font-size="11">while stop_reason == "tool_use":</text>
+      <text x="450" y="90" text-anchor="middle" fill="var(--text-secondary)" font-family="JetBrains Mono, monospace" font-size="11">  LLM &#8594; Tools &#8594; Results &#8594; LLM</text>
+      <text x="450" y="108" text-anchor="middle" fill="var(--text-dim)" font-family="JetBrains Mono, monospace" font-size="9">&#24490;&#29615;&#19981;&#21464;&#65292;&#26426;&#21046;&#22312;&#21464;</text>
+
+      <line x1="450" y1="118" x2="450" y2="148" stroke="var(--amber)" stroke-width="1.5" marker-end="url(#ah)"/>
+
+      <!-- Phase 1: Foundations -->
+      <rect x="20" y="150" width="210" height="200" rx="10" fill="var(--bg-card)" stroke="var(--border-card-hover)" stroke-width="1" opacity="0.9"/>
+      <rect x="20" y="150" width="210" height="28" rx="10" fill="var(--amber-dim)"/>
+      <text x="125" y="169" text-anchor="middle" fill="var(--amber)" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">PHASE 1: FOUNDATIONS</text>
+
+      <text x="36" y="198" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">S01</text>
+      <text x="70" y="198" fill="var(--text-primary)" font-family="Outfit, sans-serif" font-size="12">Agent Loop &#26680;&#24515;&#24490;&#29615;</text>
+      <text x="36" y="216" fill="var(--text-dim)" font-family="JetBrains Mono, monospace" font-size="9" font-style="italic">"one loop is all you need"</text>
+      <line x1="36" y1="224" x2="214" y2="224" stroke="var(--border-card)" stroke-width="0.5"/>
+      <text x="36" y="242" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">S02</text>
+      <text x="70" y="242" fill="var(--text-primary)" font-family="Outfit, sans-serif" font-size="12">Tool Dispatch &#24037;&#20855;&#20998;&#21457;</text>
+      <text x="36" y="260" fill="var(--text-dim)" font-family="JetBrains Mono, monospace" font-size="9" font-style="italic">"Map&#60;name, handler&#62;"</text>
+      <line x1="36" y1="268" x2="214" y2="268" stroke="var(--border-card)" stroke-width="0.5"/>
+      <text x="36" y="286" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">S03</text>
+      <text x="70" y="286" fill="var(--text-primary)" font-family="Outfit, sans-serif" font-size="12">TodoWrite &#20219;&#21153;&#36861;&#36394;</text>
+      <line x1="36" y1="298" x2="214" y2="298" stroke="var(--border-card)" stroke-width="0.5"/>
+      <text x="36" y="316" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">S04</text>
+      <text x="70" y="316" fill="var(--text-primary)" font-family="Outfit, sans-serif" font-size="12">Subagent &#23376;&#20195;&#29702;</text>
+      <text x="36" y="334" fill="var(--text-dim)" font-family="JetBrains Mono, monospace" font-size="9" font-style="italic">"fresh context isolation"</text>
+
+      <!-- Phase 2: Memory & State -->
+      <rect x="246" y="150" width="210" height="200" rx="10" fill="var(--bg-card)" stroke="var(--border-card-hover)" stroke-width="1" opacity="0.9"/>
+      <rect x="246" y="150" width="210" height="28" rx="10" fill="var(--amber-dim)"/>
+      <text x="351" y="169" text-anchor="middle" fill="var(--amber)" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">PHASE 2: MEMORY &amp; STATE</text>
+
+      <text x="262" y="198" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">S05</text>
+      <text x="296" y="198" fill="var(--text-primary)" font-family="Outfit, sans-serif" font-size="12">Skill Loading &#25353;&#38656;&#21152;&#36733;</text>
+      <line x1="262" y1="210" x2="440" y2="210" stroke="var(--border-card)" stroke-width="0.5"/>
+      <text x="262" y="228" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">S06</text>
+      <text x="296" y="228" fill="var(--text-primary)" font-family="Outfit, sans-serif" font-size="12">Context Compact &#21387;&#32553;</text>
+      <text x="262" y="246" fill="var(--text-dim)" font-family="JetBrains Mono, monospace" font-size="9" font-style="italic">"3-layer compression"</text>
+      <line x1="262" y1="254" x2="440" y2="254" stroke="var(--border-card)" stroke-width="0.5"/>
+      <text x="262" y="272" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">S07</text>
+      <text x="296" y="272" fill="var(--text-primary)" font-family="Outfit, sans-serif" font-size="12">Task System &#20219;&#21153;&#25345;&#20037;&#21270;</text>
+      <line x1="262" y1="284" x2="440" y2="284" stroke="var(--border-card)" stroke-width="0.5"/>
+      <text x="262" y="302" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">S08</text>
+      <text x="296" y="302" fill="var(--text-primary)" font-family="Outfit, sans-serif" font-size="12">Background &#21518;&#21488;&#25191;&#34892;</text>
+      <text x="262" y="320" fill="var(--text-dim)" font-family="JetBrains Mono, monospace" font-size="9" font-style="italic">"fire and forget"</text>
+
+      <!-- Phase 3: Multi-Agent -->
+      <rect x="472" y="150" width="210" height="200" rx="10" fill="var(--bg-card)" stroke="var(--border-card-hover)" stroke-width="1" opacity="0.9"/>
+      <rect x="472" y="150" width="210" height="28" rx="10" fill="var(--amber-dim)"/>
+      <text x="577" y="169" text-anchor="middle" fill="var(--amber)" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">PHASE 3: MULTI-AGENT</text>
+
+      <text x="488" y="198" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">S09</text>
+      <text x="522" y="198" fill="var(--text-primary)" font-family="Outfit, sans-serif" font-size="12">Teams JSONL &#37038;&#31665;&#36890;&#20449;</text>
+      <line x1="488" y1="210" x2="666" y2="210" stroke="var(--border-card)" stroke-width="0.5"/>
+      <text x="488" y="228" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">S10</text>
+      <text x="522" y="228" fill="var(--text-primary)" font-family="Outfit, sans-serif" font-size="12">Protocols &#21327;&#35758; FSM</text>
+      <line x1="488" y1="240" x2="666" y2="240" stroke="var(--border-card)" stroke-width="0.5"/>
+      <text x="488" y="258" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">S11</text>
+      <text x="522" y="258" fill="var(--text-primary)" font-family="Outfit, sans-serif" font-size="12">Autonomous &#33258;&#20027;&#35748;&#39046;</text>
+      <text x="488" y="276" fill="var(--text-dim)" font-family="JetBrains Mono, monospace" font-size="9" font-style="italic">"agent finds work itself"</text>
+      <line x1="488" y1="284" x2="666" y2="284" stroke="var(--border-card)" stroke-width="0.5"/>
+      <text x="488" y="302" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">S12</text>
+      <text x="522" y="302" fill="var(--text-primary)" font-family="Outfit, sans-serif" font-size="12">Worktree &#30446;&#24405;&#38548;&#31163;</text>
+      <text x="488" y="320" fill="var(--text-dim)" font-family="JetBrains Mono, monospace" font-size="9" font-style="italic">"isolate by dir, coord by ID"</text>
+
+      <!-- Arrows between phases -->
+      <path d="M230,250 L246,250" stroke="var(--cyan)" stroke-width="1.2" marker-end="url(#ah-cyan)" stroke-dasharray="4,3"/>
+      <path d="M456,250 L472,250" stroke="var(--cyan)" stroke-width="1.2" marker-end="url(#ah-cyan)" stroke-dasharray="4,3"/>
+      <path d="M350,140 L125,150" stroke="var(--amber)" stroke-width="1" opacity="0.5" stroke-dasharray="3,3"/>
+      <path d="M450,118 L351,150" stroke="var(--amber)" stroke-width="1" opacity="0.5" stroke-dasharray="3,3"/>
+      <path d="M550,140 L577,150" stroke="var(--amber)" stroke-width="1" opacity="0.5" stroke-dasharray="3,3"/>
+
+      <!-- Right side: Harness components -->
+      <rect x="698" y="150" width="188" height="200" rx="10" fill="var(--bg-card)" stroke="var(--amber)" stroke-width="1.2" opacity="0.9"/>
+      <rect x="698" y="150" width="188" height="28" rx="10" fill="var(--amber-dim)"/>
+      <text x="792" y="169" text-anchor="middle" fill="var(--amber)" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">HARNESS =</text>
+      <text x="714" y="198" fill="var(--text-primary)" font-family="JetBrains Mono, monospace" font-size="11">&#128295; Tools</text>
+      <text x="780" y="198" fill="var(--text-dim)" font-family="Outfit, sans-serif" font-size="10">bash/read/write</text>
+      <text x="714" y="222" fill="var(--text-primary)" font-family="JetBrains Mono, monospace" font-size="11">&#128218; Knowledge</text>
+      <text x="800" y="222" fill="var(--text-dim)" font-family="Outfit, sans-serif" font-size="10">skills/docs</text>
+      <text x="714" y="246" fill="var(--text-primary)" font-family="JetBrains Mono, monospace" font-size="11">&#128065; Observation</text>
+      <text x="812" y="246" fill="var(--text-dim)" font-family="Outfit, sans-serif" font-size="10">git/logs</text>
+      <text x="714" y="270" fill="var(--text-primary)" font-family="JetBrains Mono, monospace" font-size="11">&#9889; Action</text>
+      <text x="772" y="270" fill="var(--text-dim)" font-family="Outfit, sans-serif" font-size="10">CLI/API</text>
+      <text x="714" y="294" fill="var(--text-primary)" font-family="JetBrains Mono, monospace" font-size="11">&#128274; Permissions</text>
+      <text x="814" y="294" fill="var(--text-dim)" font-family="Outfit, sans-serif" font-size="10">sandbox</text>
+      <text x="714" y="318" fill="var(--text-primary)" font-family="JetBrains Mono, monospace" font-size="11">&#129504; Context</text>
+      <text x="798" y="318" fill="var(--text-dim)" font-family="Outfit, sans-serif" font-size="10">compact/task</text>
+      <text x="714" y="342" fill="var(--text-primary)" font-family="JetBrains Mono, monospace" font-size="11">&#129309; Teams</text>
+      <text x="782" y="342" fill="var(--text-dim)" font-family="Outfit, sans-serif" font-size="10">inbox/protocol</text>
+      <path d="M682,250 L698,250" stroke="var(--amber)" stroke-width="1.2" marker-end="url(#ah)" stroke-dasharray="4,3"/>
+
+      <!-- Bottom: The Pattern flow -->
+      <rect x="100" y="376" width="700" height="108" rx="12" fill="var(--bg-card)" stroke="var(--border-card-hover)" stroke-width="1"/>
+      <!-- User box -->
+      <rect x="118" y="393" width="52" height="24" rx="4" fill="none" stroke="var(--cyan)" stroke-width="1"/>
+      <text x="144" y="409" text-anchor="middle" fill="var(--text-primary)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">User</text>
+      <!-- User → messages[] -->
+      <path d="M170,405 L204,405" stroke="var(--cyan)" stroke-width="1.2" marker-end="url(#ah-cyan)"/>
+      <text x="210" y="409" fill="var(--text-primary)" font-family="JetBrains Mono, monospace" font-size="11">messages[]</text>
+      <!-- messages[] → LLM -->
+      <path d="M295,405 L328,405" stroke="var(--cyan)" stroke-width="1.2" marker-end="url(#ah-cyan)"/>
+      <!-- LLM box -->
+      <rect x="336" y="393" width="46" height="24" rx="4" fill="none" stroke="var(--amber)" stroke-width="1.5"/>
+      <text x="359" y="409" text-anchor="middle" fill="var(--amber)" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700">LLM</text>
+      <!-- LLM → response -->
+      <path d="M382,405 L416,405" stroke="var(--amber)" stroke-width="1.2" marker-end="url(#ah)"/>
+      <text x="422" y="409" fill="var(--text-primary)" font-family="JetBrains Mono, monospace" font-size="11">response</text>
+      <!-- response → decision -->
+      <path d="M498,405 L526,405" stroke="var(--text-dim)" stroke-width="1" marker-end="url(#ah)"/>
+      <!-- Decision diamond: tool_use? -->
+      <polygon points="544,405 556,393 568,405 556,417" fill="var(--amber-dim)" stroke="var(--amber)" stroke-width="1.4"/>
+      <text x="556" y="388" text-anchor="middle" fill="var(--text-dim)" font-family="JetBrains Mono, monospace" font-size="9">tool_use?</text>
+      <!-- yes branch: complete loop back to LLM input -->
+      <path d="M556,417 L556,458 L312,458 L312,393" fill="none" stroke="var(--amber)" stroke-width="1.4" marker-end="url(#ah)" stroke-dasharray="5,3"/>
+      <text x="557" y="440" fill="var(--amber)" font-family="JetBrains Mono, monospace" font-size="9">yes</text>
+      <text x="434" y="472" text-anchor="middle" fill="var(--text-primary)" font-family="JetBrains Mono, monospace" font-size="9">execute tools &#8594; append results &#8594; loop</text>
+      <!-- no branch: return text -->
+      <path d="M568,405 L610,405" stroke="var(--cyan)" stroke-width="1.2" marker-end="url(#ah-cyan)"/>
+      <text x="576" y="399" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="9">no</text>
+      <!-- return text box -->
+      <rect x="614" y="393" width="90" height="24" rx="4" fill="none" stroke="var(--cyan)" stroke-width="1"/>
+      <text x="659" y="409" text-anchor="middle" fill="var(--text-primary)" font-family="JetBrains Mono, monospace" font-size="11">return text</text>
+
+      <!-- Bottom: Vision -->
+      <rect x="100" y="500" width="700" height="108" rx="12" fill="var(--bg-card)" stroke="var(--border-card)" stroke-width="1"/>
+      <text x="450" y="524" text-anchor="middle" fill="var(--amber)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">VISION: Harness &#27169;&#24335;&#21487;&#27867;&#21270;&#21040;&#20219;&#20309;&#39046;&#22495;</text>
+      <text x="140" y="548" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="10">&#128187; Coding Agent</text>
+      <text x="140" y="564" fill="var(--text-dim)" font-family="Outfit, sans-serif" font-size="10">= Model + IDE + Terminal + FS</text>
+      <text x="370" y="548" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="10">&#127793; Agriculture Agent</text>
+      <text x="370" y="564" fill="var(--text-dim)" font-family="Outfit, sans-serif" font-size="10">= Model + Sensor + Irrigation</text>
+      <text x="600" y="548" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="10">&#127975; Hotel Agent</text>
+      <text x="600" y="564" fill="var(--text-dim)" font-family="Outfit, sans-serif" font-size="10">= Model + Booking + Channel</text>
+      <text x="450" y="596" text-anchor="middle" fill="var(--amber-light)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">&#24490;&#29615;&#19981;&#21464; &#183; &#24037;&#20855;&#22312;&#21464; &#183; &#30693;&#35782;&#22312;&#21464; &#183; Agent &#27867;&#21270;&#19968;&#20999;</text>
+    </svg>
+  </section>
+
+  <!-- Prerequisites -->
+  <section class="phase">
+    <div class="phase-label">
+      <span class="phase-tag">Phase 0: Prerequisites</span>
+      <div class="phase-line"></div>
+    </div>
+    <div class="lessons-grid">
+      <a href="s00_prerequisites.html" class="lesson-card">
+        <span class="num">00</span>
+        <div class="tag">S00</div>
+        <h3>Anthropic Messages API 前提知识</h3>
+        <p class="zh">Agent 运行的底层协议：请求字段、响应结构、工具定义</p>
+        <p class="insight">"POST /v1/messages is all you need."</p>
+        <span class="arrow-icon">&rarr;</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Phase 1: Foundations -->
+  <section class="phase">
+    <div class="phase-label">
+      <span class="phase-tag">Phase 1: Foundations</span>
+      <div class="phase-line"></div>
+    </div>
+    <div class="lessons-grid">
+      <a href="s01_agent_loop.html" class="lesson-card">
+        <span class="num">01</span>
+        <div class="tag">S01</div>
+        <h3>Agent Loop 核心循环</h3>
+        <p class="zh">整个 AI Agent 的秘密就在一个 while 循环里</p>
+        <p class="insight">"The model is the agent."</p>
+        <span class="arrow-icon">&rarr;</span>
+      </a>
+      <a href="s02_tool_dispatch.html" class="lesson-card">
+        <span class="num">02</span>
+        <div class="tag">S02</div>
+        <h3>Tool Dispatch 工具分发</h3>
+        <p class="zh">循环没变，只是加了工具 Map</p>
+        <p class="insight">"The loop didn't change at all."</p>
+        <span class="arrow-icon">&rarr;</span>
+      </a>
+      <a href="s03_todo_write.html" class="lesson-card">
+        <span class="num">03</span>
+        <div class="tag">S03</div>
+        <h3>TodoWrite 任务追踪</h3>
+        <p class="zh">Agent 能追踪自己的进度，而且你能看到</p>
+        <p class="insight">"Nag, don't control."</p>
+        <span class="arrow-icon">&rarr;</span>
+      </a>
+      <a href="s04_subagent.html" class="lesson-card">
+        <span class="num">04</span>
+        <div class="tag">S04</div>
+        <h3>Subagent 子代理</h3>
+        <p class="zh">进程隔离天然带来上下文隔离</p>
+        <p class="insight">"Fresh context, summary-only return."</p>
+        <span class="arrow-icon">&rarr;</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Phase 2: Memory & State -->
+  <section class="phase">
+    <div class="phase-label">
+      <span class="phase-tag">Phase 2: Memory &amp; State</span>
+      <div class="phase-line"></div>
+    </div>
+    <div class="lessons-grid">
+      <a href="s05_skill_loading.html" class="lesson-card">
+        <span class="num">05</span>
+        <div class="tag">S05</div>
+        <h3>Skill Loading 技能加载</h3>
+        <p class="zh">别把所有东西塞进 system prompt，按需加载</p>
+        <p class="insight">"Two-layer: catalog + on-demand."</p>
+        <span class="arrow-icon">&rarr;</span>
+      </a>
+      <a href="s06_context_compact.html" class="lesson-card">
+        <span class="num">06</span>
+        <div class="tag">S06</div>
+        <h3>Context Compact 上下文压缩</h3>
+        <p class="zh">策略性遗忘，从而永远工作下去</p>
+        <p class="insight">"Forgetting is a feature."</p>
+        <span class="arrow-icon">&rarr;</span>
+      </a>
+      <a href="s07_task_system.html" class="lesson-card">
+        <span class="num">07</span>
+        <div class="tag">S07</div>
+        <h3>Task System 任务系统</h3>
+        <p class="zh">状态存在对话之外，不怕上下文压缩</p>
+        <p class="insight">"State that survives compression."</p>
+        <span class="arrow-icon">&rarr;</span>
+      </a>
+      <a href="s08_background_tasks.html" class="lesson-card">
+        <span class="num">08</span>
+        <div class="tag">S08</div>
+        <h3>Background Tasks 后台任务</h3>
+        <p class="zh">发射即忘，Agent 不会因为命令还在跑就卡住</p>
+        <p class="insight">"Fire and forget."</p>
+        <span class="arrow-icon">&rarr;</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Phase 3: Multi-Agent -->
+  <section class="phase">
+    <div class="phase-label">
+      <span class="phase-tag">Phase 3: Multi-Agent</span>
+      <div class="phase-line"></div>
+    </div>
+    <div class="lessons-grid">
+      <a href="s09_agent_teams.html" class="lesson-card">
+        <span class="num">09</span>
+        <div class="tag">S09</div>
+        <h3>Agent Teams 代理团队</h3>
+        <p class="zh">能互相交谈的队友，JSONL 邮箱通信</p>
+        <p class="insight">"Teammates that talk to each other."</p>
+        <span class="arrow-icon">&rarr;</span>
+      </a>
+      <a href="s10_team_protocols.html" class="lesson-card">
+        <span class="num">10</span>
+        <div class="tag">S10</div>
+        <h3>Team Protocols 团队协议</h3>
+        <p class="zh">同一个 request_id 关联模式，两个领域</p>
+        <p class="insight">"request_id correlation pattern."</p>
+        <span class="arrow-icon">&rarr;</span>
+      </a>
+      <a href="s11_autonomous_agents.html" class="lesson-card">
+        <span class="num">11</span>
+        <div class="tag">S11</div>
+        <h3>Autonomous Agents 自主代理</h3>
+        <p class="zh">Agent 自己找活干，IDLE 轮询 + 自动认领</p>
+        <p class="insight">"The agent finds work itself."</p>
+        <span class="arrow-icon">&rarr;</span>
+      </a>
+      <a href="s12_worktree_task_isolation.html" class="lesson-card">
+        <span class="num">12</span>
+        <div class="tag">S12</div>
+        <h3>Worktree Isolation 工作树隔离</h3>
+        <p class="zh">按目录隔离，按任务 ID 协调</p>
+        <p class="insight">"Isolate by directory, coordinate by task ID."</p>
+        <span class="arrow-icon">&rarr;</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Run command -->
+  <section class="run-section">
+    <h2>Quick Start</h2>
+    <pre class="run-code"><span class="comment"># 1. 编辑配置文件 src/main/resources/claude.properties</span>
+<span class="arg">ANTHROPIC_API_KEY</span>=sk-ant-xxxxx      <span class="comment"># 填入你的 API Key</span>
+<span class="arg">ANTHROPIC_BASE_URL</span>=https://api.anthropic.com  <span class="comment"># 或第三方代理地址</span>
+<span class="arg">MODEL_ID</span>=claude-sonnet-4-20250514   <span class="comment"># 可选，默认即可</span>
+
+<span class="comment"># 2. 在 IDE 中直接运行 main 方法（推荐）</span>
+<span class="cmd">打开任意课程的 Java 文件，点击 main() 旁的运行按钮即可</span>
+
+<span class="comment"></span>
+<span class="cmd"></span> <span class="arg"></span> <span class="cmd"></span><span class="arg"></span></pre>
+  </section>
+
+  <!-- Footer -->
+  <div class="footer">
+    &copy; Original project by <a href="https://github.com/shareAI-lab/learn-claude-code" target="_blank">shareAI-lab/learn-claude-code</a> (MIT License)<br>
+    Java Edition by <span style="color:var(--amber)">arrayadd</span> &middot; JDK 1.8 + Maven + Gson
+  </div>
+
+</div>
+
+<script>
+function toggleTheme() {
+  var html = document.documentElement;
+  var btn = document.getElementById('themeToggle');
+  if (html.getAttribute('data-theme') === 'light') {
+    html.removeAttribute('data-theme');
+    btn.innerHTML = '&#127769;';
+    localStorage.setItem('theme', 'dark');
+  } else {
+    html.setAttribute('data-theme', 'light');
+    btn.innerHTML = '&#9728;&#65039;';
+    localStorage.setItem('theme', 'light');
+  }
+}
+(function() {
+  if (localStorage.getItem('theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    var btn = document.getElementById('themeToggle');
+    if (btn) btn.innerHTML = '&#9728;&#65039;';
+  }
+})();
+</script>
+</body>
+</html>

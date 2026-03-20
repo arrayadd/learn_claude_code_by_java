@@ -1,0 +1,20 @@
+Learn Claude Code by Java
+Copyright (c) 2025 arrayadd
+
+This software is licensed under the MIT License.
+
+---
+
+This project is a Java rewrite of:
+  shareAI-lab/learn-claude-code
+  Copyright (c) 2024 shareAI Lab
+  https://github.com/shareAI-lab/learn-claude-code
+
+---
+
+This project includes the following third-party software:
+
+Google Gson
+Copyright (c) 2008 Google Inc.
+Licensed under the Apache License, Version 2.0
+https://github.com/google/gson

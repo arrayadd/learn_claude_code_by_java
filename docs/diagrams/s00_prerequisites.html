@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S00 - Prerequisites 前提知识：Anthropic Messages API</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg-deep: #111827;
+    --bg-card: rgba(26, 34, 52, 0.7);
+    --bg-card-hover: rgba(32, 42, 64, 0.85);
+    --border-card: rgba(240, 180, 41, 0.15);
+    --border-card-hover: rgba(240, 180, 41, 0.4);
+    --amber: #f0b429;
+    --amber-light: #ffd166;
+    --amber-dim: rgba(240, 180, 41, 0.08);
+    --cyan: #4ecdc4;
+    --cyan-dim: rgba(78, 205, 196, 0.3);
+    --red: #ff6b6b;
+    --green: #51cf66;
+    --purple: #da77f2;
+    --text-primary: #e8e6e3;
+    --text-secondary: #8a8f98;
+    --text-dim: #4a5068;
+    --glow-amber: 0 0 30px rgba(240, 180, 41, 0.25);
+    --glow-cyan: 0 0 30px rgba(78, 205, 196, 0.2);
+    --font-code: 'JetBrains Mono', monospace;
+    --font-heading: 'Outfit', sans-serif;
+  }
+
+  [data-theme="light"] {
+    --bg-deep: #f8f6f1;
+    --bg-card: rgba(255, 255, 255, 0.85);
+    --bg-card-hover: rgba(255, 255, 255, 0.95);
+    --border-card: rgba(160, 120, 20, 0.18);
+    --border-card-hover: rgba(160, 120, 20, 0.4);
+    --amber: #b8860b;
+    --amber-light: #996600;
+    --amber-dim: rgba(184, 134, 11, 0.06);
+    --cyan: #0d7377;
+    --cyan-dim: rgba(13, 115, 119, 0.2);
+    --red: #e03131;
+    --green: #2f9e44;
+    --purple: #9c36b5;
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a4a5e;
+    --text-dim: #7a7a8e;
+    --glow-amber: 0 0 20px rgba(184, 134, 11, 0.1);
+    --glow-cyan: 0 0 20px rgba(13, 115, 119, 0.1);
+  }
+
+  [data-theme="light"] body::before {
+    background-image:
+      linear-gradient(rgba(160, 120, 20, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(160, 120, 20, 0.06) 1px, transparent 1px);
+  }
+
+  [data-theme="light"] body::after {
+    background: radial-gradient(ellipse at 20% 50%, rgba(13, 115, 119, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(184, 134, 11, 0.06) 0%, transparent 50%);
+  }
+
+  .theme-toggle {
+    position: fixed; top: 20px; right: 20px; z-index: 999;
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid var(--border-card); background: var(--bg-card);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 20px; transition: all 0.3s ease; box-shadow: var(--glow-amber);
+  }
+  .theme-toggle:hover { border-color: var(--amber); transform: scale(1.1); }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--bg-deep); color: var(--text-primary);
+    font-family: var(--font-heading); min-height: 100vh; overflow-x: hidden;
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(240, 180, 41, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(240, 180, 41, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px; pointer-events: none; z-index: 0;
+  }
+
+  body::after {
+    content: ''; position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 20% 50%, rgba(78, 205, 196, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(240, 180, 41, 0.05) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .container {
+    position: relative; z-index: 1;
+    max-width: 960px; margin: 0 auto; padding: 60px 24px 80px;
+  }
+
+  /* Header */
+  .page-header {
+    text-align: center; margin-bottom: 56px; padding-top: 16px;
+  }
+  .page-header .badge {
+    display: inline-block; font-family: var(--font-code); font-size: 11px; font-weight: 600;
+    color: var(--cyan); background: var(--cyan-dim); border: 1px solid rgba(78, 205, 196, 0.2);
+    border-radius: 20px; padding: 5px 16px; margin-bottom: 20px;
+    letter-spacing: 2px; text-transform: uppercase;
+  }
+  [data-theme="light"] .page-header .badge { border-color: rgba(13, 115, 119, 0.3); }
+
+  .page-header h1 {
+    font-weight: 800; font-size: clamp(28px, 5vw, 48px); line-height: 1.15; margin-bottom: 14px;
+    background: linear-gradient(135deg, var(--amber-light) 0%, var(--amber) 50%, var(--cyan) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .page-header .sub {
+    font-size: 16px; font-weight: 300; color: var(--text-secondary);
+    max-width: 620px; margin: 0 auto; line-height: 1.7;
+  }
+
+  /* Section cards */
+  .api-section {
+    background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 14px;
+    padding: 32px 28px; margin-bottom: 28px;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    position: relative; overflow: hidden;
+    animation: fadeUp 0.5s ease-out both;
+  }
+  .api-section:nth-child(2) { animation-delay: 0.05s; }
+  .api-section:nth-child(3) { animation-delay: 0.1s; }
+  .api-section:nth-child(4) { animation-delay: 0.15s; }
+  .api-section:nth-child(5) { animation-delay: 0.2s; }
+  .api-section:nth-child(6) { animation-delay: 0.25s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .api-section::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--amber), var(--cyan));
+  }
+
+  .api-section h2 {
+    font-weight: 700; font-size: 20px; color: var(--text-primary); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .api-section h2 .icon { font-size: 22px; }
+  .api-section h3 {
+    font-weight: 600; font-size: 15px; color: var(--amber-light); margin: 20px 0 12px;
+    padding-left: 12px; border-left: 3px solid var(--amber);
+  }
+  .api-section p {
+    font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 12px;
+  }
+
+  /* Field table */
+  .field-table {
+    width: 100%; border-collapse: collapse; margin: 16px 0 8px; font-size: 13px;
+  }
+  .field-table th {
+    font-family: var(--font-code); font-size: 11px; font-weight: 600;
+    color: var(--amber); text-transform: uppercase; letter-spacing: 1px;
+    text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border-card-hover);
+    background: var(--amber-dim);
+  }
+  .field-table td {
+    padding: 10px 12px; border-bottom: 1px solid var(--border-card); vertical-align: top;
+  }
+  .field-table tr:last-child td { border-bottom: none; }
+  .field-table tr:hover td { background: var(--amber-dim); }
+
+  .field-name {
+    font-family: var(--font-code); font-weight: 600; color: var(--cyan); font-size: 13px;
+    white-space: nowrap;
+  }
+  .field-type {
+    font-family: var(--font-code); font-size: 11px; color: var(--purple);
+    background: rgba(218, 119, 242, 0.1); padding: 2px 8px; border-radius: 4px;
+    white-space: nowrap;
+  }
+  .field-req {
+    font-family: var(--font-code); font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 4px; white-space: nowrap;
+  }
+  .field-req.required { color: var(--red); background: rgba(255, 107, 107, 0.12); }
+  .field-req.optional { color: var(--green); background: rgba(81, 207, 102, 0.1); }
+  .field-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  .field-desc code {
+    font-family: var(--font-code); font-size: 12px; color: var(--amber-light);
+    background: var(--amber-dim); padding: 1px 6px; border-radius: 3px;
+  }
+
+  /* Code blocks */
+  .code-block {
+    font-family: var(--font-code); font-size: 12px; line-height: 1.85;
+    background: rgba(0,0,0,0.25); border-radius: 8px; padding: 18px 22px;
+    overflow-x: auto; margin: 14px 0;
+    border: 1px solid var(--border-card);
+  }
+  [data-theme="light"] .code-block { background: rgba(0,0,0,0.04); }
+  .code-block .kw { color: var(--purple); }
+  .code-block .str { color: var(--green); }
+  .code-block .key { color: var(--cyan); }
+  .code-block .val { color: var(--amber-light); }
+  .code-block .cmt { color: var(--text-dim); font-style: italic; }
+  .code-block .num { color: var(--red); }
+
+  /* SVG diagram */
+  .diagram-wrap {
+    margin: 20px 0; padding: 16px; background: rgba(0,0,0,0.15); border-radius: 10px;
+    border: 1px solid var(--border-card);
+  }
+  [data-theme="light"] .diagram-wrap { background: rgba(0,0,0,0.03); }
+
+  /* Inline tag */
+  .tag-inline {
+    font-family: var(--font-code); font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px;
+  }
+  .tag-inline.endpoint { color: var(--green); background: rgba(81, 207, 102, 0.12); }
+  .tag-inline.header { color: var(--purple); background: rgba(218, 119, 242, 0.1); }
+
+  /* Tip box */
+  .tip-box {
+    background: rgba(78, 205, 196, 0.08); border: 1px solid rgba(78, 205, 196, 0.2);
+    border-radius: 8px; padding: 14px 18px; margin: 16px 0;
+    font-size: 13px; color: var(--text-secondary); line-height: 1.7;
+  }
+  .tip-box strong { color: var(--cyan); }
+
+  /* Nav */
+  .nav-hint {
+    margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border-card);
+    font-family: var(--font-code); font-size: 13px;
+  }
+  .nav-hint a {
+    color: var(--text-secondary); text-decoration: none; padding: 8px 14px;
+    border: 1px solid var(--border-card); border-radius: 8px;
+    transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .nav-hint a:hover {
+    border-color: var(--amber); color: var(--amber); background: var(--amber-dim);
+  }
+  .nav-hint a .arrow { font-size: 16px; transition: transform 0.2s; }
+  .nav-hint a:hover .arrow { transform: translateX(3px); }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .container { padding: 32px 14px 60px; }
+    .api-section { padding: 22px 16px; }
+    .field-table { font-size: 12px; }
+    .field-table th, .field-table td { padding: 8px 6px; }
+    .code-block { font-size: 11px; padding: 14px 12px; }
+  }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" title="Toggle theme" onclick="toggleTheme()">&#127769;</button>
+
+<div class="container">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div class="badge">S00 &middot; Prerequisites</div>
+    <h1>Anthropic Messages API</h1>
+    <p class="sub">
+      在进入 12 节课程之前，先彻底搞清 Agent 运行的底层协议。<br>
+      所有 Agent 行为都建立在这一个 API 调用之上：<code style="font-family:var(--font-code);color:var(--cyan);background:var(--cyan-dim);padding:2px 8px;border-radius:4px;font-size:14px;">POST /v1/messages</code>
+    </p>
+  </header>
+
+  <!-- 1. Endpoint Overview -->
+  <section class="api-section">
+    <h2><span class="icon">&#9889;</span> Endpoint 端点概览</h2>
+
+    <p><span class="tag-inline endpoint">POST</span> <code style="font-family:var(--font-code);color:var(--cyan);">https://api.anthropic.com/v1/messages</code></p>
+
+    <p>发送一组结构化消息（文本/图片/工具结果），模型生成对话中的下一条消息。这是所有 Agent 行为的唯一入口。</p>
+
+    <h3>必需 Headers</h3>
+    <table class="field-table">
+      <tr>
+        <th>Header</th><th>值</th><th>说明</th>
+      </tr>
+      <tr>
+        <td><span class="field-name">x-api-key</span></td>
+        <td><span class="field-type">string</span></td>
+        <td class="field-desc">你的 API Key，在 <a href="https://console.anthropic.com" style="color:var(--cyan);">Console</a> 获取</td>
+      </tr>
+      <tr>
+        <td><span class="field-name">anthropic-version</span></td>
+        <td><span class="field-type">string</span></td>
+        <td class="field-desc">API 版本号，当前为 <code>2023-06-01</code></td>
+      </tr>
+      <tr>
+        <td><span class="field-name">content-type</span></td>
+        <td><span class="field-type">string</span></td>
+        <td class="field-desc">始终为 <code>application/json</code></td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- 2. Request Body -->
+  <section class="api-section">
+    <h2><span class="icon">&#128229;</span> Request Body 请求体</h2>
+
+    <h3>必填字段 Required</h3>
+    <table class="field-table">
+      <tr>
+        <th>字段</th><th>类型</th><th>必填</th><th>说明</th>
+      </tr>
+      <tr>
+        <td><span class="field-name">model</span></td>
+        <td><span class="field-type">string</span></td>
+        <td><span class="field-req required">REQUIRED</span></td>
+        <td class="field-desc">模型 ID。如 <code>claude-sonnet-4-20250514</code>、<code>claude-opus-4-20250514</code>。<br>决定了 Agent 的"大脑"是谁。</td>
+      </tr>
+      <tr>
+        <td><span class="field-name">max_tokens</span></td>
+        <td><span class="field-type">integer</span></td>
+        <td><span class="field-req required">REQUIRED</span></td>
+        <td class="field-desc">最大输出 token 数。模型到达此限制时停止生成。<br>典型值：<code>4096</code> 或 <code>8192</code>。</td>
+      </tr>
+      <tr>
+        <td><span class="field-name">messages</span></td>
+        <td><span class="field-type">array</span></td>
+        <td><span class="field-req required">REQUIRED</span></td>
+        <td class="field-desc">
+          对话消息列表。<strong>这是 Agent 的核心数据结构。</strong><br>
+          每条消息有 <code>role</code>（<code>"user"</code> 或 <code>"assistant"</code>）和 <code>content</code>。<br>
+          消息必须 user/assistant 交替。工具结果 (<code>tool_result</code>) 放在 <code>user</code> 角色中。
+        </td>
+      </tr>
+    </table>
+
+    <h3>可选字段 Optional</h3>
+    <table class="field-table">
+      <tr>
+        <th>字段</th><th>类型</th><th>必填</th><th>说明</th>
+      </tr>
+      <tr>
+        <td><span class="field-name">system</span></td>
+        <td><span class="field-type">string | array</span></td>
+        <td><span class="field-req optional">OPTIONAL</span></td>
+        <td class="field-desc">系统提示词。为模型设定角色、规则、上下文。<br>Agent 的"人格"和"工作指南"在这里定义。</td>
+      </tr>
+      <tr>
+        <td><span class="field-name">tools</span></td>
+        <td><span class="field-type">array</span></td>
+        <td><span class="field-req optional">OPTIONAL</span></td>
+        <td class="field-desc">
+          <strong>工具定义列表——Agent 的"双手"。</strong><br>
+          每个工具有 <code>name</code>、<code>description</code>、<code>input_schema</code>（JSON Schema）。<br>
+          模型看到这些定义后，会在需要时"调用"工具。
+        </td>
+      </tr>
+      <tr>
+        <td><span class="field-name">tool_choice</span></td>
+        <td><span class="field-type">object</span></td>
+        <td><span class="field-req optional">OPTIONAL</span></td>
+        <td class="field-desc">
+          控制模型如何选择工具：<br>
+          <code>{"type":"auto"}</code> — 模型自行决定（默认）<br>
+          <code>{"type":"any"}</code> — 强制使用某个工具<br>
+          <code>{"type":"tool","name":"bash"}</code> — 强制使用指定工具
+        </td>
+      </tr>
+      <tr>
+        <td><span class="field-name">temperature</span></td>
+        <td><span class="field-type">number</span></td>
+        <td><span class="field-req optional">OPTIONAL</span></td>
+        <td class="field-desc">采样温度，0.0-1.0。越低越确定性，越高越有创造力。<br>编程任务通常 <code>0.0</code>，创意任务 <code>0.7</code>+。默认 <code>1.0</code>。</td>
+      </tr>
+      <tr>
+        <td><span class="field-name">top_p</span></td>
+        <td><span class="field-type">number</span></td>
+        <td><span class="field-req optional">OPTIONAL</span></td>
+        <td class="field-desc">核采样。仅考虑累积概率达到 top_p 的 token。与 temperature 配合使用。</td>
+      </tr>
+      <tr>
+        <td><span class="field-name">top_k</span></td>
+        <td><span class="field-type">integer</span></td>
+        <td><span class="field-req optional">OPTIONAL</span></td>
+        <td class="field-desc">每步仅采样概率最高的 K 个 token。</td>
+      </tr>
+      <tr>
+        <td><span class="field-name">stop_sequences</span></td>
+        <td><span class="field-type">array&lt;string&gt;</span></td>
+        <td><span class="field-req optional">OPTIONAL</span></td>
+        <td class="field-desc">自定义停止序列。模型遇到这些文本时停止生成。</td>
+      </tr>
+      <tr>
+        <td><span class="field-name">stream</span></td>
+        <td><span class="field-type">boolean</span></td>
+        <td><span class="field-req optional">OPTIONAL</span></td>
+        <td class="field-desc">是否流式输出。开启后通过 Server-Sent Events 逐步返回。</td>
+      </tr>
+      <tr>
+        <td><span class="field-name">metadata</span></td>
+        <td><span class="field-type">object</span></td>
+        <td><span class="field-req optional">OPTIONAL</span></td>
+        <td class="field-desc">请求元数据。可设置 <code>user_id</code> 用于滥用检测。</td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- 3. Messages 消息结构 -->
+  <section class="api-section">
+    <h2><span class="icon">&#128172;</span> Messages 消息结构详解</h2>
+
+    <p><code>messages</code> 是 Agent 的记忆。每一轮对话都追加到这个数组中。</p>
+
+    <h3>消息格式</h3>
+    <div class="code-block">
+{
+  <span class="key">"role"</span>: <span class="str">"user"</span> | <span class="str">"assistant"</span>,
+  <span class="key">"content"</span>: <span class="str">"文本字符串"</span> | [<span class="cmt">content blocks 数组</span>]
+}
+    </div>
+
+    <h3>Content Block 类型</h3>
+    <table class="field-table">
+      <tr>
+        <th>type</th><th>角色</th><th>结构</th><th>说明</th>
+      </tr>
+      <tr>
+        <td><span class="field-name">text</span></td>
+        <td>both</td>
+        <td><code>{"type":"text","text":"..."}</code></td>
+        <td class="field-desc">纯文本内容。最常见的类型。</td>
+      </tr>
+      <tr>
+        <td><span class="field-name">image</span></td>
+        <td>user</td>
+        <td><code>{"type":"image","source":{...}}</code></td>
+        <td class="field-desc">图片内容。支持 base64 和 URL。多模态输入。</td>
+      </tr>
+      <tr>
+        <td><span class="field-name">tool_use</span></td>
+        <td>assistant</td>
+        <td><code>{"type":"tool_use","id":"...","name":"...","input":{...}}</code></td>
+        <td class="field-desc"><strong>模型决定调用工具。</strong>包含工具名和输入参数。这是 Agent Loop 的驱动力。</td>
+      </tr>
+      <tr>
+        <td><span class="field-name">tool_result</span></td>
+        <td>user</td>
+        <td><code>{"type":"tool_result","tool_use_id":"...","content":"..."}</code></td>
+        <td class="field-desc"><strong>工具执行结果。</strong>通过 <code>tool_use_id</code> 与调用配对。Harness 填写此字段。</td>
+      </tr>
+    </table>
+
+    <div class="tip-box">
+      <strong>&#128161; 关键洞察：</strong>Agent Loop 的本质就是不断地在 <code>messages[]</code> 中追加
+      <code>tool_use</code>（assistant）和 <code>tool_result</code>（user）消息，
+      直到模型返回 <code>stop_reason: "end_turn"</code>。
+    </div>
+  </section>
+
+  <!-- 4. Tool Definition -->
+  <section class="api-section">
+    <h2><span class="icon">&#128295;</span> Tool Definition 工具定义</h2>
+
+    <p>每个工具是一个 JSON 对象，告诉模型"你能做什么"。</p>
+
+    <div class="code-block">
+{
+  <span class="key">"name"</span>: <span class="str">"bash"</span>,              <span class="cmt">// 工具名，模型用这个名字调用</span>
+  <span class="key">"description"</span>: <span class="str">"Run a shell command."</span>,  <span class="cmt">// 描述，帮助模型决定何时使用</span>
+  <span class="key">"input_schema"</span>: {          <span class="cmt">// JSON Schema 定义输入参数</span>
+    <span class="key">"type"</span>: <span class="str">"object"</span>,
+    <span class="key">"properties"</span>: {
+      <span class="key">"command"</span>: {
+        <span class="key">"type"</span>: <span class="str">"string"</span>,
+        <span class="key">"description"</span>: <span class="str">"The shell command to execute"</span>
+      }
+    },
+    <span class="key">"required"</span>: [<span class="str">"command"</span>]
+  }
+}
+    </div>
+
+    <table class="field-table">
+      <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+      <tr>
+        <td><span class="field-name">name</span></td>
+        <td><span class="field-type">string</span></td>
+        <td class="field-desc">工具名。<code>[a-zA-Z0-9_-]</code>，最长 64 字符。模型在 <code>tool_use</code> 中引用此名字。</td>
+      </tr>
+      <tr>
+        <td><span class="field-name">description</span></td>
+        <td><span class="field-type">string</span></td>
+        <td class="field-desc">工具描述。详细描述帮助模型更准确地决定何时使用。这是"教模型用工具"的关键。</td>
+      </tr>
+      <tr>
+        <td><span class="field-name">input_schema</span></td>
+        <td><span class="field-type">object</span></td>
+        <td class="field-desc">JSON Schema 格式。定义 <code>properties</code>（每个参数的名称、类型、描述）和 <code>required</code>（必填参数列表）。</td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- 5. Response -->
+  <section class="api-section">
+    <h2><span class="icon">&#128228;</span> Response 响应体</h2>
+
+    <table class="field-table">
+      <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+      <tr>
+        <td><span class="field-name">id</span></td>
+        <td><span class="field-type">string</span></td>
+        <td class="field-desc">消息唯一 ID，如 <code>msg_01XF...</code></td>
+      </tr>
+      <tr>
+        <td><span class="field-name">type</span></td>
+        <td><span class="field-type">string</span></td>
+        <td class="field-desc">始终为 <code>"message"</code></td>
+      </tr>
+      <tr>
+        <td><span class="field-name">role</span></td>
+        <td><span class="field-type">string</span></td>
+        <td class="field-desc">始终为 <code>"assistant"</code></td>
+      </tr>
+      <tr>
+        <td><span class="field-name">content</span></td>
+        <td><span class="field-type">array</span></td>
+        <td class="field-desc">
+          <strong>模型输出的内容块数组。</strong><br>
+          可包含 <code>text</code> 块和 <code>tool_use</code> 块。<br>
+          一次响应中可能同时有文字说明和多个工具调用。
+        </td>
+      </tr>
+      <tr>
+        <td><span class="field-name">model</span></td>
+        <td><span class="field-type">string</span></td>
+        <td class="field-desc">实际使用的模型 ID。</td>
+      </tr>
+      <tr>
+        <td><span class="field-name">stop_reason</span></td>
+        <td><span class="field-type">string</span></td>
+        <td class="field-desc">
+          <strong>Agent Loop 的控制信号！</strong><br>
+          <code>"end_turn"</code> — 模型自然结束 → 退出循环<br>
+          <code>"tool_use"</code> — 模型要调用工具 → 继续循环<br>
+          <code>"max_tokens"</code> — 达到 token 上限 → 被截断<br>
+          <code>"stop_sequence"</code> — 命中自定义停止序列
+        </td>
+      </tr>
+      <tr>
+        <td><span class="field-name">stop_sequence</span></td>
+        <td><span class="field-type">string | null</span></td>
+        <td class="field-desc">如果因停止序列而停止，返回匹配的序列。</td>
+      </tr>
+      <tr>
+        <td><span class="field-name">usage</span></td>
+        <td><span class="field-type">object</span></td>
+        <td class="field-desc">
+          Token 用量统计：<br>
+          <code>input_tokens</code> — 输入 token 数<br>
+          <code>output_tokens</code> — 输出 token 数<br>
+          <code>cache_creation_input_tokens</code> — 缓存创建<br>
+          <code>cache_read_input_tokens</code> — 缓存命中
+        </td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- 6. Flow Diagram -->
+  <section class="api-section">
+    <h2><span class="icon">&#128260;</span> Agent Loop 与 API 的关系</h2>
+
+    <p>下图展示一次完整的 Agent Loop 中，API 请求/响应是如何流动的。</p>
+
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 820 400" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
+        <defs>
+          <marker id="arw" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6" fill="none" stroke="var(--amber)" stroke-width="1.2"/>
+          </marker>
+          <marker id="arw-c" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6" fill="none" stroke="var(--cyan)" stroke-width="1.2"/>
+          </marker>
+        </defs>
+
+        <!-- Step 1: Build request -->
+        <rect x="10" y="20" width="180" height="70" rx="10" fill="var(--bg-card)" stroke="var(--cyan)" stroke-width="1.5"/>
+        <text x="100" y="46" text-anchor="middle" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">1. BUILD REQUEST</text>
+        <text x="100" y="66" text-anchor="middle" fill="var(--text-secondary)" font-family="JetBrains Mono, monospace" font-size="10">{model, messages,</text>
+        <text x="100" y="80" text-anchor="middle" fill="var(--text-secondary)" font-family="JetBrains Mono, monospace" font-size="10"> tools, max_tokens}</text>
+
+        <path d="M190,55 L240,55" stroke="var(--amber)" stroke-width="1.5" marker-end="url(#arw)"/>
+
+        <!-- Step 2: POST -->
+        <rect x="242" y="20" width="160" height="70" rx="10" fill="var(--bg-card)" stroke="var(--amber)" stroke-width="2"/>
+        <text x="322" y="46" text-anchor="middle" fill="var(--amber)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">2. POST /v1/messages</text>
+        <text x="322" y="66" text-anchor="middle" fill="var(--text-dim)" font-family="JetBrains Mono, monospace" font-size="10">&#8594; Anthropic API</text>
+        <text x="322" y="80" text-anchor="middle" fill="var(--text-dim)" font-family="JetBrains Mono, monospace" font-size="10">&#8592; response JSON</text>
+
+        <path d="M402,55 L452,55" stroke="var(--amber)" stroke-width="1.5" marker-end="url(#arw)"/>
+
+        <!-- Step 3: Check stop_reason -->
+        <rect x="454" y="20" width="170" height="70" rx="10" fill="var(--bg-card)" stroke="var(--amber)" stroke-width="1.5"/>
+        <text x="539" y="42" text-anchor="middle" fill="var(--amber)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">3. CHECK</text>
+        <text x="539" y="60" text-anchor="middle" fill="var(--text-primary)" font-family="JetBrains Mono, monospace" font-size="11">stop_reason == ?</text>
+        <text x="539" y="80" text-anchor="middle" fill="var(--text-dim)" font-family="JetBrains Mono, monospace" font-size="10">&#36825;&#26159; Agent &#30340;&#20998;&#21449;&#28857;</text>
+
+        <!-- Branch: end_turn -->
+        <path d="M624,55 L680,55" stroke="var(--cyan)" stroke-width="1.5" marker-end="url(#arw-c)"/>
+        <rect x="682" y="28" width="120" height="50" rx="8" fill="var(--bg-card)" stroke="var(--cyan)" stroke-width="1.5"/>
+        <text x="742" y="50" text-anchor="middle" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">end_turn</text>
+        <text x="742" y="68" text-anchor="middle" fill="var(--text-secondary)" font-family="JetBrains Mono, monospace" font-size="10">&#36820;&#22238;&#25991;&#26412; &#10003;</text>
+
+        <!-- Branch: tool_use (downward) -->
+        <path d="M539,90 L539,130" stroke="var(--amber)" stroke-width="1.5" marker-end="url(#arw)"/>
+        <text x="555" y="118" fill="var(--amber)" font-family="JetBrains Mono, monospace" font-size="9">tool_use</text>
+
+        <!-- Step 4: Extract tool calls -->
+        <rect x="414" y="132" width="250" height="60" rx="10" fill="var(--bg-card)" stroke="var(--amber)" stroke-width="1.5"/>
+        <text x="539" y="156" text-anchor="middle" fill="var(--amber)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">4. EXTRACT TOOL CALLS</text>
+        <text x="539" y="176" text-anchor="middle" fill="var(--text-secondary)" font-family="JetBrains Mono, monospace" font-size="10">content[] &#8594; {name, id, input}</text>
+
+        <path d="M539,192 L539,225" stroke="var(--amber)" stroke-width="1.5" marker-end="url(#arw)"/>
+
+        <!-- Step 5: Execute -->
+        <rect x="414" y="227" width="250" height="60" rx="10" fill="var(--bg-card)" stroke="var(--cyan)" stroke-width="1.5"/>
+        <text x="539" y="251" text-anchor="middle" fill="var(--cyan)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">5. EXECUTE TOOLS</text>
+        <text x="539" y="271" text-anchor="middle" fill="var(--text-secondary)" font-family="JetBrains Mono, monospace" font-size="10">dispatch[name](input) &#8594; output</text>
+
+        <path d="M539,287 L539,320" stroke="var(--amber)" stroke-width="1.5" marker-end="url(#arw)"/>
+
+        <!-- Step 6: Append results -->
+        <rect x="414" y="322" width="250" height="60" rx="10" fill="var(--bg-card)" stroke="var(--amber)" stroke-width="1.5"/>
+        <text x="539" y="346" text-anchor="middle" fill="var(--amber)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">6. APPEND TO MESSAGES</text>
+        <text x="539" y="366" text-anchor="middle" fill="var(--text-secondary)" font-family="JetBrains Mono, monospace" font-size="10">assistant(content) + user(tool_result)</text>
+
+        <!-- Loop back arrow -->
+        <path d="M414,352 L60,352 L60,90 L100,90" stroke="var(--amber)" stroke-width="1.5" marker-end="url(#arw)" stroke-dasharray="6,4" opacity="0.7"/>
+        <text x="80" y="220" fill="var(--amber)" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" transform="rotate(-90,80,220)">LOOP BACK</text>
+
+        <!-- Labels -->
+        <rect x="10" y="132" width="180" height="50" rx="8" fill="var(--amber-dim)" stroke="var(--border-card)" stroke-width="1"/>
+        <text x="100" y="154" text-anchor="middle" fill="var(--text-secondary)" font-family="Outfit, sans-serif" font-size="12">&#36825;&#23601;&#26159; Agent Loop</text>
+        <text x="100" y="172" text-anchor="middle" fill="var(--text-dim)" font-family="Outfit, sans-serif" font-size="11">&#24490;&#29615;&#30452;&#21040; end_turn</text>
+      </svg>
+    </div>
+
+    <div class="tip-box">
+      <strong>&#128161; 与课程的对应：</strong>
+      Step 1-6 就是 S01 的全部内容。S02 往后的每一课，只是在 Step 5（工具执行）中增加更多能力：
+      更多工具（S02）、任务追踪（S03）、子代理（S04）... 循环本身始终不变。
+    </div>
+  </section>
+
+  <!-- 7. Java 示例 -->
+  <section class="api-section">
+    <h2><span class="icon">&#9749;</span> Java 调用示例</h2>
+
+    <p>本项目使用原生 JDK 1.8 + Gson，不依赖 Anthropic SDK。以下是核心调用方式：</p>
+
+    <div class="code-block">
+<span class="cmt">// 构建请求体</span>
+JsonObject body = <span class="kw">new</span> JsonObject();
+body.addProperty(<span class="str">"model"</span>, <span class="str">"claude-sonnet-4-20250514"</span>);
+body.addProperty(<span class="str">"system"</span>, <span class="str">"You are a coding agent."</span>);
+body.add(<span class="str">"messages"</span>, messages);   <span class="cmt">// JsonArray</span>
+body.add(<span class="str">"tools"</span>, toolDefs);       <span class="cmt">// JsonArray</span>
+body.addProperty(<span class="str">"max_tokens"</span>, <span class="num">8000</span>);
+
+<span class="cmt">// POST 请求 (AnthropicClient 封装)</span>
+JsonObject response = client.createMessage(
+    systemPrompt, messages, toolDefs, <span class="num">8000</span>);
+
+<span class="cmt">// 解析响应</span>
+String stopReason = response.get(<span class="str">"stop_reason"</span>).getAsString();
+JsonArray content  = response.getAsJsonArray(<span class="str">"content"</span>);
+
+<span class="cmt">// Agent Loop 的核心判断</span>
+<span class="kw">if</span> (<span class="str">"tool_use"</span>.equals(stopReason)) {
+    <span class="cmt">// 继续循环：执行工具，追加结果</span>
+} <span class="kw">else</span> {
+    <span class="cmt">// 结束循环：提取文本返回</span>
+}
+    </div>
+
+    <p>配置优先级：环境变量 &gt; <code>claude.properties</code> &gt; 内置默认值。详见 <code>AnthropicClient.java</code>。</p>
+  </section>
+
+  <!-- Navigation -->
+  <nav class="nav-hint" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+    <a href="index.html">
+      <span class="arrow">&larr;</span>
+      首页 Index
+    </a>
+    <a href="index.html" style="color:var(--amber,#f0b429);text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:13px;padding:6px 14px;border-radius:6px;border:1px solid rgba(240,180,41,0.2);">⌂ 首页</a>
+    <a href="s01_agent_loop.html">
+      S01 Agent Loop
+      <span class="arrow">&rarr;</span>
+    </a>
+  </nav>
+
+</div>
+
+<script>
+function toggleTheme() {
+  var html = document.documentElement;
+  var btn = document.getElementById('themeToggle');
+  if (html.getAttribute('data-theme') === 'light') {
+    html.removeAttribute('data-theme');
+    btn.innerHTML = '&#127769;';
+    localStorage.setItem('theme', 'dark');
+  } else {
+    html.setAttribute('data-theme', 'light');
+    btn.innerHTML = '&#9728;&#65039;';
+    localStorage.setItem('theme', 'light');
+  }
+}
+(function() {
+  if (localStorage.getItem('theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    var btn = document.getElementById('themeToggle');
+    if (btn) btn.innerHTML = '&#9728;&#65039;';
+  }
+})();
+</script>
+</body>
+</html>

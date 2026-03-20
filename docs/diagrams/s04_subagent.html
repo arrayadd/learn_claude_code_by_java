@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S04 - Subagent 子代理</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg-deep: #111827;
+    --bg-card: rgba(26, 34, 52, 0.7);
+    --bg-card-hover: rgba(32, 42, 64, 0.85);
+    --border-card: rgba(240, 180, 41, 0.15);
+    --border-card-hover: rgba(240, 180, 41, 0.4);
+    --amber: #f0b429;
+    --amber-light: #ffd166;
+    --cyan: #4ecdc4;
+    --cyan-dim: rgba(78, 205, 196, 0.3);
+    --red-dim: rgba(255, 107, 107, 0.3);
+    --red: #ff6b6b;
+    --text-primary: #e8e6e3;
+    --text-secondary: #8a8f98;
+    --text-dim: #4a5068;
+    --glow-amber: 0 0 30px rgba(240, 180, 41, 0.25);
+    --glow-cyan: 0 0 30px rgba(78, 205, 196, 0.2);
+    --font-code: 'JetBrains Mono', monospace;
+    --font-heading: 'Outfit', sans-serif;
+  }
+
+  [data-theme="light"] {
+    --bg-deep: #f8f6f1;
+    --bg-card: rgba(255, 255, 255, 0.85);
+    --bg-card-hover: rgba(255, 255, 255, 0.95);
+    --border-card: rgba(160, 120, 20, 0.18);
+    --border-card-hover: rgba(160, 120, 20, 0.4);
+    --amber: #b8860b;
+    --amber-light: #996600;
+    --cyan: #0d7377;
+    --cyan-dim: rgba(13, 115, 119, 0.2);
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a4a5e;
+    --text-dim: #7a7a8e;
+    --glow-amber: 0 0 20px rgba(184, 134, 11, 0.1);
+    --glow-cyan: 0 0 20px rgba(13, 115, 119, 0.1);
+  }
+
+  [data-theme="light"] body::before {
+    background-image:
+      linear-gradient(rgba(160, 120, 20, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(160, 120, 20, 0.06) 1px, transparent 1px);
+  }
+
+  [data-theme="light"] body::after {
+    background: radial-gradient(ellipse at 20% 50%, rgba(13, 115, 119, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(184, 134, 11, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(13, 115, 119, 0.04) 0%, transparent 50%);
+  }
+
+  /* Theme toggle button */
+  .theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 999;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--border-card);
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    box-shadow: var(--glow-amber);
+  }
+  .theme-toggle:hover {
+    border-color: var(--amber);
+    transform: scale(1.1);
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--font-heading);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(240, 180, 41, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(240, 180, 41, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 25% 50%, rgba(78, 205, 196, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 75% 50%, rgba(255, 107, 107, 0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px 24px 80px;
+  }
+
+  .title-section { text-align: center; margin-bottom: 64px; }
+
+  .lesson-badge {
+    display: inline-block;
+    font-family: var(--font-code);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--amber);
+    background: rgba(240, 180, 41, 0.1);
+    border: 1px solid rgba(240, 180, 41, 0.25);
+    border-radius: 20px;
+    padding: 6px 18px;
+    margin-bottom: 20px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .title-section h1 {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: clamp(32px, 5vw, 56px);
+    line-height: 1.15;
+    background: linear-gradient(135deg, var(--amber-light) 0%, var(--amber) 50%, var(--cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+
+  .title-section .subtitle {
+    font-size: clamp(16px, 2.2vw, 22px);
+    font-weight: 300;
+    color: var(--text-secondary);
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .diagram-wrapper {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 16px;
+    padding: 40px 20px;
+    margin-bottom: 64px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--glow-amber);
+  }
+
+  .diagram-wrapper h2 {
+    font-family: var(--font-code);
+    font-size: 14px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .diagram-svg {
+    display: block;
+    width: 100%;
+    min-height: 600px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  @keyframes dashFlow {
+    to { stroke-dashoffset: -40; }
+  }
+
+  @keyframes dashFlowReverse {
+    to { stroke-dashoffset: 40; }
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(240, 180, 41, 0.2)); }
+    50% { filter: drop-shadow(0 0 20px rgba(240, 180, 41, 0.6)); }
+  }
+
+  @keyframes fadeContext {
+    0%, 70% { opacity: 1; }
+    100% { opacity: 0.15; }
+  }
+
+  @keyframes crossFade {
+    0%, 60% { opacity: 0; }
+    80%, 100% { opacity: 0.7; }
+  }
+
+  .flow-line {
+    stroke-dasharray: 10 8;
+    animation: dashFlow 1.4s linear infinite;
+  }
+
+  .flow-line-reverse {
+    stroke-dasharray: 10 8;
+    animation: dashFlowReverse 1.4s linear infinite;
+  }
+
+  .parent-glow { animation: pulseGlow 3s ease-in-out infinite; }
+
+  .child-fade {
+    animation: fadeContext 4s ease-in-out infinite;
+  }
+
+  .cross-mark {
+    animation: crossFade 4s ease-in-out infinite;
+  }
+
+  .cards-section { margin-bottom: 64px; }
+
+  .cards-section > h2 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 28px;
+    color: var(--text-primary);
+    margin-bottom: 32px;
+    padding-left: 16px;
+    border-left: 3px solid var(--amber);
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 14px;
+    padding: 32px 28px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    transition: all 0.35s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--amber), var(--cyan));
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+
+  .card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-card-hover);
+    transform: translateY(-4px);
+    box-shadow: var(--glow-amber);
+  }
+
+  .card:hover::before { opacity: 1; }
+
+  .card-number {
+    font-family: var(--font-code);
+    font-size: 12px;
+    color: var(--amber);
+    opacity: 0.6;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  .card h3 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--amber-light);
+    margin-bottom: 12px;
+  }
+
+  .card .cn {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 8px;
+  }
+
+  .card .en {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  .card code {
+    font-family: var(--font-code);
+    font-size: 0.85em;
+    color: var(--cyan);
+    background: rgba(78, 205, 196, 0.08);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  .table-section { margin-bottom: 64px; }
+
+  .table-section > h2 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 28px;
+    color: var(--text-primary);
+    margin-bottom: 32px;
+    padding-left: 16px;
+    border-left: 3px solid var(--cyan);
+  }
+
+  .table-wrapper {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 14px;
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead th {
+    font-family: var(--font-code);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--amber);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    text-align: left;
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(240, 180, 41, 0.15);
+    background: rgba(240, 180, 41, 0.04);
+  }
+
+  tbody td {
+    font-family: var(--font-code);
+    font-size: 13px;
+    padding: 14px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    vertical-align: top;
+  }
+
+  tbody tr:hover { background: rgba(240, 180, 41, 0.04); }
+  tbody td:first-child { color: var(--text-secondary); }
+  tbody td:nth-child(2) { color: var(--cyan); }
+  tbody td:nth-child(3) { color: var(--red); }
+  tbody td:last-child { color: var(--text-dim); font-family: var(--font-heading); font-size: 13px; }
+
+  .nav-hint {
+    text-align: center;
+    padding: 48px 20px;
+    border-top: 1px solid rgba(240, 180, 41, 0.08);
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .nav-hint a {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--cyan);
+    text-decoration: none;
+    padding: 14px 32px;
+    border: 1px solid var(--cyan-dim);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+  }
+
+  .nav-hint a:hover {
+    background: rgba(78, 205, 196, 0.08);
+    border-color: var(--cyan);
+    box-shadow: var(--glow-cyan);
+  }
+
+  .nav-hint a.prev { color: var(--text-secondary); border-color: rgba(255,255,255,0.1); }
+  .nav-hint a.prev:hover { color: var(--cyan); border-color: var(--cyan-dim); }
+
+  .nav-hint a.home {
+    color: var(--amber);
+    border-color: rgba(240, 180, 41, 0.2);
+  }
+
+  .nav-hint a.home:hover {
+    background: rgba(240, 180, 41, 0.08);
+    border-color: var(--amber);
+    box-shadow: var(--glow-amber);
+  }
+
+  @media (max-width: 640px) {
+    .container { padding: 32px 16px 60px; }
+    .cards-grid { grid-template-columns: 1fr; }
+    .diagram-wrapper { padding: 20px 10px; }
+  }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" title="Toggle light/dark theme" onclick="toggleTheme()">🌙</button>
+<div class="container">
+
+  <section class="title-section">
+    <div class="lesson-badge">Lesson 04</div>
+    <h1>Subagent 子代理</h1>
+    <p class="subtitle">进程隔离天然带来上下文隔离</p>
+  </section>
+
+  <section class="diagram-wrapper">
+    <h2>// Parent-Child Architecture</h2>
+    <svg class="diagram-svg" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrowCyan" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#4ecdc4"/>
+        </marker>
+        <marker id="arrowAmber" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#f0b429"/>
+        </marker>
+        <marker id="arrowRed" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#ff6b6b"/>
+        </marker>
+        <filter id="glowAmber">
+          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feFlood flood-color="#f0b429" flood-opacity="0.4"/>
+          <feComposite in2="blur" operator="in"/>
+          <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glowCyan">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feFlood flood-color="#4ecdc4" flood-opacity="0.35"/>
+          <feComposite in2="blur" operator="in"/>
+          <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- Divider line -->
+      <line x1="500" y1="30" x2="500" y2="570" stroke="rgba(240,180,41,0.08)" stroke-width="2" stroke-dasharray="8 6"/>
+
+      <!-- ===== PARENT (Left) ===== -->
+      <rect x="30" y="30" width="440" height="540" rx="16" fill="rgba(240,180,41,0.02)" stroke="rgba(240,180,41,0.12)" stroke-width="1.5"/>
+      <text x="50" y="60" font-family="JetBrains Mono, monospace" font-size="12" fill="rgba(240,180,41,0.5)" letter-spacing="2" font-weight="600">PARENT AGENT</text>
+
+      <!-- Parent messages -->
+      <rect x="55" y="85" width="180" height="130" rx="8" fill="rgba(16,22,36,0.8)" stroke="rgba(240,180,41,0.2)" stroke-width="1"/>
+      <text x="75" y="108" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(240,180,41,0.4)">messages = [</text>
+      <text x="85" y="126" font-family="JetBrains Mono, monospace" font-size="9" fill="#8a8f98">{user: "重构项目..."}</text>
+      <text x="85" y="142" font-family="JetBrains Mono, monospace" font-size="9" fill="#8a8f98">{assistant: "好的..."}</text>
+      <text x="85" y="158" font-family="JetBrains Mono, monospace" font-size="9" fill="#8a8f98">{user: tool_result}</text>
+      <text x="85" y="174" font-family="JetBrains Mono, monospace" font-size="9" fill="#ffd166">... (full history)</text>
+      <text x="85" y="200" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(240,180,41,0.4)">]</text>
+
+      <!-- Parent LLM -->
+      <g class="parent-glow">
+        <rect x="280" y="110" width="160" height="55" rx="10" fill="rgba(240,180,41,0.08)" stroke="#f0b429" stroke-width="2" filter="url(#glowAmber)"/>
+        <text x="360" y="135" text-anchor="middle" font-family="Outfit, sans-serif" font-weight="800" font-size="16" fill="#ffd166">Parent LLM</text>
+        <text x="360" y="153" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#f0b429">主代理</text>
+      </g>
+
+      <!-- Parent tools (5 tools: 4 + task) -->
+      <text x="55" y="255" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(78,205,196,0.4)" letter-spacing="1">TOOLS (5)</text>
+      <g>
+        <rect x="55" y="270" width="85" height="28" rx="5" fill="rgba(78,205,196,0.06)" stroke="rgba(78,205,196,0.2)" stroke-width="1"/>
+        <text x="97" y="288" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#4ecdc4">bash</text>
+      </g>
+      <g>
+        <rect x="150" y="270" width="85" height="28" rx="5" fill="rgba(78,205,196,0.06)" stroke="rgba(78,205,196,0.2)" stroke-width="1"/>
+        <text x="192" y="288" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#4ecdc4">read</text>
+      </g>
+      <g>
+        <rect x="245" y="270" width="85" height="28" rx="5" fill="rgba(78,205,196,0.06)" stroke="rgba(78,205,196,0.2)" stroke-width="1"/>
+        <text x="287" y="288" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#4ecdc4">write</text>
+      </g>
+      <g>
+        <rect x="340" y="270" width="85" height="28" rx="5" fill="rgba(78,205,196,0.06)" stroke="rgba(78,205,196,0.2)" stroke-width="1"/>
+        <text x="382" y="288" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#4ecdc4">edit</text>
+      </g>
+      <g>
+        <rect x="55" y="308" width="85" height="28" rx="5" fill="rgba(240,180,41,0.1)" stroke="rgba(240,180,41,0.35)" stroke-width="1.5"/>
+        <text x="97" y="326" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#ffd166" font-weight="700">task</text>
+      </g>
+
+      <!-- ===== CHILD (Right) ===== -->
+      <rect x="530" y="30" width="440" height="540" rx="16" fill="rgba(78,205,196,0.02)" stroke="rgba(78,205,196,0.12)" stroke-width="1.5"/>
+      <text x="550" y="60" font-family="JetBrains Mono, monospace" font-size="12" fill="rgba(78,205,196,0.5)" letter-spacing="2" font-weight="600">CHILD AGENT (Subagent)</text>
+
+      <!-- Child messages (empty/fresh) -->
+      <g class="child-fade">
+        <rect x="555" y="85" width="180" height="80" rx="8" fill="rgba(16,22,36,0.8)" stroke="rgba(78,205,196,0.2)" stroke-width="1"/>
+        <text x="575" y="108" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(78,205,196,0.4)">messages = [</text>
+        <text x="585" y="128" font-family="JetBrains Mono, monospace" font-size="9" fill="#4ecdc4">{user: "子任务描述"}</text>
+        <text x="585" y="150" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(78,205,196,0.4)">]  // fresh context!</text>
+      </g>
+
+      <!-- Cross mark over child context after return -->
+      <g class="cross-mark">
+        <line x1="555" y1="85" x2="735" y2="165" stroke="#ff6b6b" stroke-width="3" opacity="0.5"/>
+        <line x1="735" y1="85" x2="555" y2="165" stroke="#ff6b6b" stroke-width="3" opacity="0.5"/>
+        <text x="645" y="182" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#ff6b6b">discarded after return</text>
+      </g>
+
+      <!-- Child LLM -->
+      <rect x="770" y="100" width="160" height="55" rx="10" fill="rgba(78,205,196,0.06)" stroke="#4ecdc4" stroke-width="1.5" filter="url(#glowCyan)"/>
+      <text x="850" y="125" text-anchor="middle" font-family="Outfit, sans-serif" font-weight="700" font-size="15" fill="#4ecdc4">Child LLM</text>
+      <text x="850" y="143" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="rgba(78,205,196,0.6)">子代理</text>
+
+      <!-- Child tools (4 tools, NO task) -->
+      <text x="555" y="230" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(78,205,196,0.4)" letter-spacing="1">TOOLS (4) — NO TASK!</text>
+      <g>
+        <rect x="555" y="245" width="85" height="28" rx="5" fill="rgba(78,205,196,0.06)" stroke="rgba(78,205,196,0.2)" stroke-width="1"/>
+        <text x="597" y="263" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#4ecdc4">bash</text>
+      </g>
+      <g>
+        <rect x="650" y="245" width="85" height="28" rx="5" fill="rgba(78,205,196,0.06)" stroke="rgba(78,205,196,0.2)" stroke-width="1"/>
+        <text x="692" y="263" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#4ecdc4">read</text>
+      </g>
+      <g>
+        <rect x="745" y="245" width="85" height="28" rx="5" fill="rgba(78,205,196,0.06)" stroke="rgba(78,205,196,0.2)" stroke-width="1"/>
+        <text x="787" y="263" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#4ecdc4">write</text>
+      </g>
+      <g>
+        <rect x="840" y="245" width="85" height="28" rx="5" fill="rgba(78,205,196,0.06)" stroke="rgba(78,205,196,0.2)" stroke-width="1"/>
+        <text x="882" y="263" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#4ecdc4">edit</text>
+      </g>
+
+      <!-- Missing task tool indicator -->
+      <g>
+        <rect x="555" y="283" width="85" height="28" rx="5" fill="rgba(255,107,107,0.06)" stroke="rgba(255,107,107,0.25)" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="597" y="301" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(255,107,107,0.4)" text-decoration="line-through">task</text>
+        <line x1="565" y1="297" x2="630" y2="297" stroke="#ff6b6b" stroke-width="1.5"/>
+      </g>
+
+      <!-- ===== Dispatch arrow (Parent → Child) ===== -->
+      <g>
+        <line x1="440" y1="350" x2="540" y2="350" stroke="#f0b429" stroke-width="2.5" class="flow-line" marker-end="url(#arrowAmber)"/>
+        <rect x="450" y="330" width="80" height="20" rx="4" fill="rgba(240,180,41,0.1)"/>
+        <text x="490" y="344" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#f0b429" font-weight="600">dispatch</text>
+        <text x="490" y="375" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="rgba(240,180,41,0.35)">task tool_use</text>
+      </g>
+
+      <!-- ===== Summary arrow (Child → Parent) ===== -->
+      <g>
+        <line x1="540" y1="440" x2="440" y2="440" stroke="#4ecdc4" stroke-width="2.5" class="flow-line-reverse" marker-end="url(#arrowCyan)"/>
+        <rect x="448" y="420" width="85" height="20" rx="4" fill="rgba(78,205,196,0.1)"/>
+        <text x="490" y="434" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#4ecdc4" font-weight="600">summary</text>
+        <text x="490" y="465" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="rgba(78,205,196,0.35)">compressed result</text>
+      </g>
+
+      <!-- Info boxes at bottom -->
+      <rect x="55" y="420" width="375" height="130" rx="10" fill="rgba(16,22,36,0.6)" stroke="rgba(240,180,41,0.12)" stroke-width="1"/>
+      <text x="75" y="448" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(240,180,41,0.4)" letter-spacing="1">PARENT RECEIVES</text>
+      <text x="75" y="472" font-family="JetBrains Mono, monospace" font-size="11" fill="#ffd166">tool_result: "已完成重构，</text>
+      <text x="75" y="490" font-family="JetBrains Mono, monospace" font-size="11" fill="#ffd166">  修改了 3 个文件，</text>
+      <text x="75" y="508" font-family="JetBrains Mono, monospace" font-size="11" fill="#ffd166">  所有测试通过。"</text>
+      <text x="75" y="536" font-family="JetBrains Mono, monospace" font-size="9" fill="rgba(240,180,41,0.3)">// only summary, not full process</text>
+
+      <rect x="555" y="370" width="375" height="80" rx="10" fill="rgba(16,22,36,0.6)" stroke="rgba(255,107,107,0.12)" stroke-width="1"/>
+      <text x="575" y="398" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(255,107,107,0.4)" letter-spacing="1">ANTI-RECURSION</text>
+      <text x="575" y="420" font-family="JetBrains Mono, monospace" font-size="11" fill="#ff6b6b">Child has no "task" tool</text>
+      <text x="575" y="438" font-family="JetBrains Mono, monospace" font-size="9" fill="rgba(255,107,107,0.4)">→ cannot spawn grandchildren</text>
+    </svg>
+  </section>
+
+  <section class="cards-section">
+    <h2>Key Concepts 核心概念</h2>
+    <div class="cards-grid">
+
+      <div class="card">
+        <div class="card-number">01</div>
+        <h3>上下文隔离 Context Isolation</h3>
+        <p class="cn">子代理启动时 <code>messages = []</code>，是全新的对话。不共享父代理的对话历史，天然避免了上下文污染。</p>
+        <p class="en">Child agent starts with empty messages. It does not share the parent's conversation history, naturally preventing context pollution.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-number">02</div>
+        <h3>信息压缩 Information Compression</h3>
+        <p class="cn">子代理完成任务后，只返回一段总结文字。父代理不需要知道子代理执行了多少步、调用了什么工具——只看结果。</p>
+        <p class="en">Child returns only a summary. The parent doesn't need to know how many steps or tools were used -- only the result matters.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-number">03</div>
+        <h3>防递归 Anti-Recursion</h3>
+        <p class="cn">子代理的工具列表里没有 <code>task</code> 工具，所以它不能再创建子代理。深度固定为 1，不会出现无限嵌套。</p>
+        <p class="en">The child's tool list excludes the "task" tool, so it cannot spawn grandchildren. Max depth is always 1.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="table-section">
+    <h2>Parent vs Child 对比</h2>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Dimension 维度</th>
+            <th>Parent 父代理</th>
+            <th>Child 子代理</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Messages</td>
+            <td>Full history</td>
+            <td>[] (fresh)</td>
+            <td>上下文完全隔离</td>
+          </tr>
+          <tr>
+            <td>Tools</td>
+            <td>5 (bash, read, write, edit, task)</td>
+            <td>4 (bash, read, write, edit)</td>
+            <td>无 task = 不能生子代理</td>
+          </tr>
+          <tr>
+            <td>Return</td>
+            <td>Full response to user</td>
+            <td>Summary string only</td>
+            <td>信息压缩</td>
+          </tr>
+          <tr>
+            <td>Lifecycle</td>
+            <td>Lives for session</td>
+            <td>Created & destroyed per task</td>
+            <td>用完即弃</td>
+          </tr>
+          <tr>
+            <td>System Prompt</td>
+            <td>Full prompt + tools</td>
+            <td>Task description only</td>
+            <td>精简指令</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Navigation -->
+  <nav class="nav-hint" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+    <a href="s03_todo_write.html">
+      <span class="arrow">&larr;</span>
+      S03 TodoWrite
+    </a>
+    <a href="index.html" style="color:var(--amber,#f0b429);text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:13px;padding:6px 14px;border-radius:6px;border:1px solid rgba(240,180,41,0.2);">⌂ 首页</a>
+    <a href="s05_skill_loading.html">
+      S05 Skill Loading
+      <span class="arrow">&rarr;</span>
+    </a>
+  </nav>
+
+</div>
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  if (html.getAttribute('data-theme') === 'light') {
+    html.removeAttribute('data-theme');
+    btn.textContent = '🌙';
+    localStorage.setItem('theme', 'dark');
+  } else {
+    html.setAttribute('data-theme', 'light');
+    btn.textContent = '☀️';
+    localStorage.setItem('theme', 'light');
+  }
+}
+(function() {
+  if (localStorage.getItem('theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    var btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = '☀️';
+  }
+})();
+</script>
+</body>
+</html>

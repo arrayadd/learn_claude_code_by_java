@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S03 - TodoWrite 任务追踪</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg-deep: #111827;
+    --bg-card: rgba(26, 34, 52, 0.7);
+    --bg-card-hover: rgba(32, 42, 64, 0.85);
+    --border-card: rgba(240, 180, 41, 0.15);
+    --border-card-hover: rgba(240, 180, 41, 0.4);
+    --amber: #f0b429;
+    --amber-light: #ffd166;
+    --cyan: #4ecdc4;
+    --cyan-dim: rgba(78, 205, 196, 0.3);
+    --green: #51cf66;
+    --orange: #ff922b;
+    --text-primary: #e8e6e3;
+    --text-secondary: #8a8f98;
+    --text-dim: #4a5068;
+    --glow-amber: 0 0 30px rgba(240, 180, 41, 0.25);
+    --glow-cyan: 0 0 30px rgba(78, 205, 196, 0.2);
+    --font-code: 'JetBrains Mono', monospace;
+    --font-heading: 'Outfit', sans-serif;
+  }
+
+  [data-theme="light"] {
+    --bg-deep: #f8f6f1;
+    --bg-card: rgba(255, 255, 255, 0.85);
+    --bg-card-hover: rgba(255, 255, 255, 0.95);
+    --border-card: rgba(160, 120, 20, 0.18);
+    --border-card-hover: rgba(160, 120, 20, 0.4);
+    --amber: #b8860b;
+    --amber-light: #996600;
+    --cyan: #0d7377;
+    --cyan-dim: rgba(13, 115, 119, 0.2);
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a4a5e;
+    --text-dim: #7a7a8e;
+    --glow-amber: 0 0 20px rgba(184, 134, 11, 0.1);
+    --glow-cyan: 0 0 20px rgba(13, 115, 119, 0.1);
+  }
+
+  [data-theme="light"] body::before {
+    background-image:
+      linear-gradient(rgba(160, 120, 20, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(160, 120, 20, 0.06) 1px, transparent 1px);
+  }
+
+  [data-theme="light"] body::after {
+    background: radial-gradient(ellipse at 20% 50%, rgba(13, 115, 119, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(184, 134, 11, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(13, 115, 119, 0.04) 0%, transparent 50%);
+  }
+
+  /* Theme toggle button */
+  .theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 999;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--border-card);
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    box-shadow: var(--glow-amber);
+  }
+  .theme-toggle:hover {
+    border-color: var(--amber);
+    transform: scale(1.1);
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--font-heading);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(240, 180, 41, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(240, 180, 41, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 30%, rgba(81, 207, 102, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 20% 70%, rgba(240, 180, 41, 0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px 24px 80px;
+  }
+
+  .title-section { text-align: center; margin-bottom: 64px; }
+
+  .lesson-badge {
+    display: inline-block;
+    font-family: var(--font-code);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--amber);
+    background: rgba(240, 180, 41, 0.1);
+    border: 1px solid rgba(240, 180, 41, 0.25);
+    border-radius: 20px;
+    padding: 6px 18px;
+    margin-bottom: 20px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .title-section h1 {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: clamp(32px, 5vw, 56px);
+    line-height: 1.15;
+    background: linear-gradient(135deg, var(--amber-light) 0%, var(--amber) 50%, var(--cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+
+  .title-section .subtitle {
+    font-size: clamp(16px, 2.2vw, 22px);
+    font-weight: 300;
+    color: var(--text-secondary);
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .diagram-wrapper {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 16px;
+    padding: 40px 20px;
+    margin-bottom: 64px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--glow-amber);
+  }
+
+  .diagram-wrapper h2 {
+    font-family: var(--font-code);
+    font-size: 14px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .diagram-svg {
+    display: block;
+    width: 100%;
+    min-height: 580px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  @keyframes dashFlow {
+    to { stroke-dashoffset: -40; }
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(240, 180, 41, 0.2)); }
+    50% { filter: drop-shadow(0 0 20px rgba(240, 180, 41, 0.6)); }
+  }
+
+  @keyframes nagPulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes checkMark {
+    0% { stroke-dashoffset: 20; }
+    100% { stroke-dashoffset: 0; }
+  }
+
+  @keyframes stateFlow {
+    0% { stroke-dashoffset: 0; }
+    100% { stroke-dashoffset: -30; }
+  }
+
+  .flow-line {
+    stroke-dasharray: 10 8;
+    animation: dashFlow 1.4s linear infinite;
+  }
+
+  .nag-arrow {
+    animation: nagPulse 1.5s ease-in-out infinite;
+  }
+
+  .state-flow-line {
+    stroke-dasharray: 6 6;
+    animation: stateFlow 1s linear infinite;
+  }
+
+  .cards-section { margin-bottom: 64px; }
+
+  .cards-section > h2 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 28px;
+    color: var(--text-primary);
+    margin-bottom: 32px;
+    padding-left: 16px;
+    border-left: 3px solid var(--amber);
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 14px;
+    padding: 32px 28px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    transition: all 0.35s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--amber), var(--cyan));
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+
+  .card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-card-hover);
+    transform: translateY(-4px);
+    box-shadow: var(--glow-amber);
+  }
+
+  .card:hover::before { opacity: 1; }
+
+  .card-number {
+    font-family: var(--font-code);
+    font-size: 12px;
+    color: var(--amber);
+    opacity: 0.6;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  .card h3 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--amber-light);
+    margin-bottom: 12px;
+  }
+
+  .card .cn {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 8px;
+  }
+
+  .card .en {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  .card code {
+    font-family: var(--font-code);
+    font-size: 0.85em;
+    color: var(--cyan);
+    background: rgba(78, 205, 196, 0.08);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  .table-section { margin-bottom: 64px; }
+
+  .table-section > h2 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 28px;
+    color: var(--text-primary);
+    margin-bottom: 32px;
+    padding-left: 16px;
+    border-left: 3px solid var(--cyan);
+  }
+
+  .table-wrapper {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 14px;
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead th {
+    font-family: var(--font-code);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--amber);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    text-align: left;
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(240, 180, 41, 0.15);
+    background: rgba(240, 180, 41, 0.04);
+  }
+
+  tbody td {
+    font-family: var(--font-code);
+    font-size: 13px;
+    padding: 14px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    vertical-align: top;
+  }
+
+  tbody tr:hover { background: rgba(240, 180, 41, 0.04); }
+  tbody td:first-child { color: var(--text-secondary); }
+  tbody td:nth-child(2) { color: var(--cyan); }
+  tbody td:last-child { color: var(--text-dim); font-family: var(--font-heading); font-size: 13px; }
+
+  .nav-hint {
+    text-align: center;
+    padding: 48px 20px;
+    border-top: 1px solid rgba(240, 180, 41, 0.08);
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .nav-hint a {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--cyan);
+    text-decoration: none;
+    padding: 14px 32px;
+    border: 1px solid var(--cyan-dim);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+  }
+
+  .nav-hint a:hover {
+    background: rgba(78, 205, 196, 0.08);
+    border-color: var(--cyan);
+    box-shadow: var(--glow-cyan);
+  }
+
+  .nav-hint a.prev { color: var(--text-secondary); border-color: rgba(255,255,255,0.1); }
+  .nav-hint a.prev:hover { color: var(--cyan); border-color: var(--cyan-dim); }
+
+  @media (max-width: 640px) {
+    .container { padding: 32px 16px 60px; }
+    .cards-grid { grid-template-columns: 1fr; }
+    .diagram-wrapper { padding: 20px 10px; }
+  }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" title="Toggle light/dark theme" onclick="toggleTheme()">🌙</button>
+<div class="container">
+
+  <section class="title-section">
+    <div class="lesson-badge">Lesson 03</div>
+    <h1>TodoWrite 任务追踪</h1>
+    <p class="subtitle">Agent 能追踪自己的进度，而且我能看到</p>
+  </section>
+
+  <section class="diagram-wrapper">
+    <h2>// Agent Loop + TodoManager State</h2>
+    <svg class="diagram-svg" viewBox="0 0 1000 580" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrowCyan" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#4ecdc4"/>
+        </marker>
+        <marker id="arrowAmber" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#f0b429"/>
+        </marker>
+        <marker id="arrowOrange" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#ff922b"/>
+        </marker>
+        <filter id="glowAmber">
+          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feFlood flood-color="#f0b429" flood-opacity="0.4"/>
+          <feComposite in2="blur" operator="in"/>
+          <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glowGreen">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feFlood flood-color="#51cf66" flood-opacity="0.3"/>
+          <feComposite in2="blur" operator="in"/>
+          <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- Agent Loop area (left) -->
+      <rect x="30" y="40" width="520" height="500" rx="16" fill="rgba(16,22,36,0.4)" stroke="rgba(78,205,196,0.1)" stroke-width="1"/>
+      <text x="50" y="70" font-family="JetBrains Mono, monospace" font-size="11" fill="rgba(78,205,196,0.3)" letter-spacing="1.5">AGENT LOOP</text>
+
+      <!-- Loop nodes -->
+      <rect x="60" y="140" width="130" height="50" rx="8" fill="rgba(16,22,36,0.9)" stroke="#4ecdc4" stroke-width="1.5"/>
+      <text x="125" y="163" text-anchor="middle" font-family="Outfit, sans-serif" font-weight="600" font-size="13" fill="#e8e6e3">User Input</text>
+      <text x="125" y="179" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#8a8f98">用户输入</text>
+
+      <line x1="190" y1="165" x2="240" y2="165" stroke="#4ecdc4" stroke-width="1.5" class="flow-line" marker-end="url(#arrowCyan)"/>
+
+      <rect x="250" y="140" width="110" height="50" rx="8" fill="rgba(240,180,41,0.08)" stroke="#f0b429" stroke-width="1.5" filter="url(#glowAmber)"/>
+      <text x="305" y="163" text-anchor="middle" font-family="Outfit, sans-serif" font-weight="700" font-size="14" fill="#ffd166">LLM</text>
+      <text x="305" y="179" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#f0b429">模型</text>
+
+      <line x1="360" y1="165" x2="410" y2="165" stroke="#4ecdc4" stroke-width="1.5" class="flow-line" marker-end="url(#arrowCyan)"/>
+
+      <rect x="420" y="140" width="110" height="50" rx="8" fill="rgba(16,22,36,0.9)" stroke="#4ecdc4" stroke-width="1.5"/>
+      <text x="475" y="163" text-anchor="middle" font-family="Outfit, sans-serif" font-weight="600" font-size="13" fill="#e8e6e3">Tools</text>
+      <text x="475" y="179" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#8a8f98">工具执行</text>
+
+      <!-- Loop back -->
+      <path d="M 475 190 Q 475 230 305 230 Q 125 230 125 190" fill="none" stroke="#f0b429" stroke-width="1.5" class="flow-line" marker-end="url(#arrowAmber)"/>
+      <text x="305" y="250" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="rgba(240,180,41,0.4)">tool_result</text>
+
+      <!-- TodoManager panel (right) -->
+      <rect x="600" y="40" width="370" height="500" rx="16" fill="rgba(16,22,36,0.6)" stroke="rgba(81,207,102,0.15)" stroke-width="1.5"/>
+      <text x="620" y="70" font-family="JetBrains Mono, monospace" font-size="11" fill="rgba(81,207,102,0.4)" letter-spacing="1.5">TODOMANAGER STATE</text>
+
+      <!-- Todo items -->
+      <g>
+        <rect x="630" y="100" width="320" height="36" rx="6" fill="rgba(81,207,102,0.06)" stroke="rgba(81,207,102,0.2)" stroke-width="1"/>
+        <text x="650" y="123" font-family="JetBrains Mono, monospace" font-size="13" fill="#51cf66">[x]</text>
+        <text x="685" y="123" font-family="Outfit, sans-serif" font-size="13" fill="rgba(81,207,102,0.7)" text-decoration="line-through">读取项目结构</text>
+        <text x="870" y="123" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(81,207,102,0.3)">completed</text>
+      </g>
+
+      <g>
+        <rect x="630" y="148" width="320" height="36" rx="6" fill="rgba(81,207,102,0.06)" stroke="rgba(81,207,102,0.2)" stroke-width="1"/>
+        <text x="650" y="171" font-family="JetBrains Mono, monospace" font-size="13" fill="#51cf66">[x]</text>
+        <text x="685" y="171" font-family="Outfit, sans-serif" font-size="13" fill="rgba(81,207,102,0.7)" text-decoration="line-through">分析依赖关系</text>
+        <text x="870" y="171" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(81,207,102,0.3)">completed</text>
+      </g>
+
+      <g>
+        <rect x="630" y="196" width="320" height="36" rx="6" fill="rgba(78,205,196,0.06)" stroke="rgba(78,205,196,0.25)" stroke-width="1.5"/>
+        <text x="650" y="219" font-family="JetBrains Mono, monospace" font-size="13" fill="#4ecdc4">[&gt;]</text>
+        <text x="685" y="219" font-family="Outfit, sans-serif" font-size="13" fill="#4ecdc4">实现核心功能</text>
+        <text x="870" y="219" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(78,205,196,0.5)">in_progress</text>
+      </g>
+
+      <g>
+        <rect x="630" y="244" width="320" height="36" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        <text x="650" y="267" font-family="JetBrains Mono, monospace" font-size="13" fill="#8a8f98">[ ]</text>
+        <text x="685" y="267" font-family="Outfit, sans-serif" font-size="13" fill="#8a8f98">编写测试用例</text>
+        <text x="870" y="267" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(255,255,255,0.15)">pending</text>
+      </g>
+
+      <g>
+        <rect x="630" y="292" width="320" height="36" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        <text x="650" y="315" font-family="JetBrains Mono, monospace" font-size="13" fill="#8a8f98">[ ]</text>
+        <text x="685" y="315" font-family="Outfit, sans-serif" font-size="13" fill="#8a8f98">更新文档</text>
+        <text x="870" y="315" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(255,255,255,0.15)">pending</text>
+      </g>
+
+      <!-- State machine -->
+      <text x="650" y="375" font-family="JetBrains Mono, monospace" font-size="11" fill="rgba(240,180,41,0.4)" letter-spacing="1">STATE MACHINE</text>
+
+      <rect x="640" y="395" width="80" height="30" rx="5" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+      <text x="680" y="414" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#8a8f98">pending</text>
+
+      <line x1="720" y1="410" x2="760" y2="410" stroke="#4ecdc4" stroke-width="1.5" class="state-flow-line" marker-end="url(#arrowCyan)"/>
+
+      <rect x="770" y="395" width="100" height="30" rx="5" fill="rgba(78,205,196,0.08)" stroke="#4ecdc4" stroke-width="1"/>
+      <text x="820" y="414" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#4ecdc4">in_progress</text>
+
+      <line x1="820" y1="425" x2="820" y2="448" stroke="#51cf66" stroke-width="1.5" class="state-flow-line" marker-end="url(#arrowCyan)"/>
+
+      <rect x="770" y="455" width="100" height="30" rx="5" fill="rgba(81,207,102,0.08)" stroke="#51cf66" stroke-width="1" filter="url(#glowGreen)"/>
+      <text x="820" y="474" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#51cf66">completed</text>
+
+      <!-- Nag reminder arrow from loop to TodoManager -->
+      <g class="nag-arrow">
+        <path d="M 305 290 L 305 420 Q 305 450 335 450 L 590 450" fill="none" stroke="#ff922b" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrowOrange)"/>
+        <rect x="340" y="430" width="220" height="28" rx="5" fill="rgba(255,146,43,0.1)" stroke="rgba(255,146,43,0.3)" stroke-width="1"/>
+        <text x="450" y="449" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#ff922b">NAG: rounds &gt;= 3 未更新?</text>
+      </g>
+
+      <!-- Connection: Tool → TodoManager update -->
+      <line x1="530" y1="155" x2="620" y2="210" stroke="#4ecdc4" stroke-width="1.5" class="flow-line" marker-end="url(#arrowCyan)"/>
+      <text x="580" y="170" font-family="JetBrains Mono, monospace" font-size="9" fill="rgba(78,205,196,0.4)" transform="rotate(-20,580,170)">todo_write</text>
+
+      <!-- Round counter -->
+      <rect x="60" y="330" width="150" height="80" rx="8" fill="rgba(16,22,36,0.8)" stroke="rgba(255,146,43,0.2)" stroke-width="1"/>
+      <text x="80" y="355" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(255,146,43,0.5)">Round Counter</text>
+      <text x="80" y="378" font-family="JetBrains Mono, monospace" font-size="12" fill="#ff922b">roundsSinceUpdate: 3</text>
+      <text x="80" y="398" font-family="JetBrains Mono, monospace" font-size="9" fill="rgba(255,146,43,0.4)">→ inject nag reminder</text>
+    </svg>
+  </section>
+
+  <section class="cards-section">
+    <h2>Key Concepts 核心概念</h2>
+    <div class="cards-grid">
+
+      <div class="card">
+        <div class="card-number">01</div>
+        <h3>结构化状态 Structured State</h3>
+        <p class="cn"><code>TodoManager</code> 不是普通文本，是可验证的数据结构。每个 todo 有 id、内容、状态三个字段，状态只能是 pending / in_progress / completed。</p>
+        <p class="en">TodoManager is not plain text but a verifiable data structure with id, content, and status fields. Status transitions are enforced.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-number">02</div>
+        <h3>Nag Reminder 提醒机制</h3>
+        <p class="cn">如果 Agent 连续 3 轮没有更新 todo，系统自动注入提醒消息。但只是提醒，不强制——模型可以选择忽略。</p>
+        <p class="en">If 3 rounds pass without a todo update, a reminder is injected into the conversation. It's a nudge, not a mandate.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-number">03</div>
+        <h3>可见性 Visibility</h3>
+        <p class="cn">用户能实时看到 Agent 在干什么、完成了多少、卡在哪里。不再是"黑盒"等待。</p>
+        <p class="en">Users can see what the agent is working on, how much is done, and where it's stuck. No more black-box waiting.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="table-section">
+    <h2>State Transitions 状态转换</h2>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>From</th>
+            <th>To</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>pending [ ]</td>
+            <td>in_progress [&gt;]</td>
+            <td>Agent 开始处理此任务</td>
+          </tr>
+          <tr>
+            <td>in_progress [&gt;]</td>
+            <td>completed [x]</td>
+            <td>任务完成</td>
+          </tr>
+          <tr>
+            <td>pending [ ]</td>
+            <td>completed [x]</td>
+            <td>简单任务可以直接完成</td>
+          </tr>
+          <tr>
+            <td>any state</td>
+            <td>pending [ ]</td>
+            <td>任务回退（极少使用）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Navigation -->
+  <nav class="nav-hint" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+    <a href="s02_tool_dispatch.html">
+      <span class="arrow">&larr;</span>
+      S02 Tool Dispatch
+    </a>
+    <a href="index.html" style="color:var(--amber,#f0b429);text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:13px;padding:6px 14px;border-radius:6px;border:1px solid rgba(240,180,41,0.2);">⌂ 首页</a>
+    <a href="s04_subagent.html">
+      S04 Subagent
+      <span class="arrow">&rarr;</span>
+    </a>
+  </nav>
+
+</div>
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  if (html.getAttribute('data-theme') === 'light') {
+    html.removeAttribute('data-theme');
+    btn.textContent = '🌙';
+    localStorage.setItem('theme', 'dark');
+  } else {
+    html.setAttribute('data-theme', 'light');
+    btn.textContent = '☀️';
+    localStorage.setItem('theme', 'light');
+  }
+}
+(function() {
+  if (localStorage.getItem('theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    var btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = '☀️';
+  }
+})();
+</script>
+</body>
+</html>

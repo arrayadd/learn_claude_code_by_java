@@ -1,0 +1,39 @@
+# Compiled
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config (may contain secrets - NEVER commit these!)
+.env
+claude.properties
+*.local
+
+# Project specific
+.tasks/
+.team/
+.transcripts/
+.worktrees/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*~

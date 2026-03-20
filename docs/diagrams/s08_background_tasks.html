@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S08 - Background Tasks 后台任务</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;600;700;800&display=swap');
+
+:root {
+  --bg-deep: #111827;
+  --bg-card: rgba(255,255,255,0.04);
+  --bg-card-hover: rgba(255,255,255,0.08);
+  --border-card: rgba(255,255,255,0.08);
+  --amber: #f0b429;
+  --amber-light: #ffd166;
+  --cyan: #4ecdc4;
+  --cyan-dim: rgba(78,205,196,0.3);
+  --purple: #a78bfa;
+  --purple-dim: rgba(167,139,250,0.3);
+  --green: #4ade80;
+  --text-primary: #e8e6e3;
+  --text-secondary: #8a8f98;
+  --text-dim: #4a4f58;
+  --glass-bg: rgba(26,32,50,0.75);
+  --glass-border: rgba(255,255,255,0.1);
+  --glow-amber: 0 0 30px rgba(240,180,41,0.15);
+  --glow-cyan: 0 0 30px rgba(78,205,196,0.15);
+  --glow-purple: 0 0 30px rgba(167,139,250,0.15);
+}
+
+  [data-theme="light"] {
+    --bg-deep: #f8f6f1;
+    --bg-card: rgba(255, 255, 255, 0.85);
+    --bg-card-hover: rgba(255, 255, 255, 0.95);
+    --border-card: rgba(160, 120, 20, 0.18);
+    --border-card-hover: rgba(160, 120, 20, 0.4);
+    --amber: #b8860b;
+    --amber-light: #996600;
+    --cyan: #0d7377;
+    --cyan-dim: rgba(13, 115, 119, 0.2);
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a4a5e;
+    --text-dim: #7a7a8e;
+    --glow-amber: 0 0 20px rgba(184, 134, 11, 0.1);
+    --glow-cyan: 0 0 20px rgba(13, 115, 119, 0.1);
+  }
+
+  [data-theme="light"] body::before {
+    background-image:
+      linear-gradient(rgba(160, 120, 20, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(160, 120, 20, 0.06) 1px, transparent 1px);
+  }
+
+  [data-theme="light"] body::after {
+    background: radial-gradient(ellipse at 20% 50%, rgba(13, 115, 119, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(184, 134, 11, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(13, 115, 119, 0.04) 0%, transparent 50%);
+  }
+
+  .theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 999;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--border-card);
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    box-shadow: var(--glow-amber);
+  }
+  .theme-toggle:hover {
+    border-color: var(--amber);
+    transform: scale(1.1);
+  }
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(ellipse at 20% 30%, rgba(167,139,250,0.04) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 70%, rgba(240,180,41,0.03) 0%, transparent 50%);
+  z-index: 0;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 60px;
+}
+
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 48px;
+  padding: 16px 24px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+}
+
+nav a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+nav a:hover { color: var(--amber); background: rgba(240,180,41,0.1); }
+
+nav .current {
+  color: var(--amber);
+  background: rgba(240,180,41,0.1);
+  border: 1px solid rgba(240,180,41,0.2);
+}
+
+header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+header .lesson-tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--purple);
+  background: rgba(167,139,250,0.1);
+  border: 1px solid rgba(167,139,250,0.2);
+  padding: 4px 14px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+header h1 {
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--purple), var(--amber-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+
+header .subtitle {
+  font-size: clamp(16px, 2.5vw, 20px);
+  color: var(--text-secondary);
+  font-weight: 300;
+}
+
+.diagram-wrapper {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 48px;
+  box-shadow: var(--glow-purple);
+  overflow-x: auto;
+}
+
+.diagram-wrapper h2 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--purple);
+  margin-bottom: 24px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+svg text { font-family: 'Outfit', sans-serif; }
+svg .mono { font-family: 'JetBrains Mono', monospace; }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 48px;
+}
+
+.card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 28px;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--purple), var(--amber));
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(167,139,250,0.2);
+  transform: translateY(-4px);
+  box-shadow: var(--glow-purple);
+}
+
+.card:hover::before { opacity: 1; }
+
+.card .card-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--cyan);
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+
+.card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--amber-light);
+  margin-bottom: 10px;
+}
+
+.card p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+@keyframes flowLeft {
+  0% { stroke-dashoffset: -20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes flowDown {
+  0% { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes notifSlide {
+  0% { transform: translateX(100px); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateX(-100px); opacity: 0; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(167,139,250,0.3)); }
+  50% { filter: drop-shadow(0 0 14px rgba(167,139,250,0.7)); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes progressBar {
+  0% { width: 0; }
+  100% { width: 120px; }
+}
+
+.anim-flow-left {
+  stroke-dasharray: 8 4;
+  animation: flowLeft 0.8s linear infinite;
+}
+
+.anim-flow-down {
+  stroke-dasharray: 8 4;
+  animation: flowDown 0.8s linear infinite;
+}
+
+.anim-pulse-p { animation: pulseGlow 2.5s ease-in-out infinite; }
+
+.anim-fadein { animation: fadeInUp 0.8s ease-out forwards; }
+.anim-fadein-d1 { animation-delay: 0.15s; opacity: 0; }
+.anim-fadein-d2 { animation-delay: 0.35s; opacity: 0; }
+.anim-fadein-d3 { animation-delay: 0.55s; opacity: 0; }
+
+.notif-item {
+  animation: notifSlide 3s ease-in-out infinite;
+}
+
+.notif-item:nth-child(2) { animation-delay: 1s; }
+.notif-item:nth-child(3) { animation-delay: 2s; }
+
+.progress-fill {
+  animation: progressBar 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes spinnerRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .container { padding: 20px 12px 40px; }
+  nav { flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .diagram-wrapper { padding: 16px; }
+  .cards { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" title="Toggle light/dark theme" onclick="toggleTheme()">🌙</button>
+<div class="container">
+
+<header>
+  <div class="lesson-tag">Lesson 08</div>
+  <h1>Background Tasks 后台任务</h1>
+  <p class="subtitle">发射即忘 -- Agent 不会因为命令还在跑就卡住</p>
+</header>
+
+<div class="diagram-wrapper">
+  <h2>// Fire-and-Forget Architecture 发射即忘架构</h2>
+  <svg viewBox="0 0 1100 800" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:800px;">
+    <defs>
+      <marker id="arr-p" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="10" markerHeight="7" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa"/>
+      </marker>
+      <marker id="arr-am" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="10" markerHeight="7" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#f0b429"/>
+      </marker>
+      <marker id="arr-cy" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="10" markerHeight="7" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#4ecdc4"/>
+      </marker>
+    </defs>
+
+    <!-- === LEFT COLUMN: Main Thread === -->
+    <g class="anim-fadein anim-fadein-d1">
+      <rect x="30" y="30" width="340" height="720" rx="14" fill="rgba(240,180,41,0.03)" stroke="rgba(240,180,41,0.15)" stroke-width="1.5"/>
+      <text x="60" y="65" fill="#f0b429" font-size="18" font-weight="800">MAIN THREAD</text>
+      <text x="60" y="88" fill="#8a8f98" font-size="12">Agent Loop 主线程</text>
+
+      <!-- Step 1: Agent receives task -->
+      <rect x="55" y="110" width="290" height="50" rx="8" fill="rgba(240,180,41,0.06)" stroke="rgba(240,180,41,0.2)" stroke-width="1"/>
+      <text x="75" y="132" fill="#ffd166" font-size="13" class="mono">1. User: "Run tests & lint"</text>
+      <text x="75" y="148" fill="#8a8f98" font-size="10" class="mono">用户请求同时运行测试和lint</text>
+
+      <!-- Step 2: Spawn background -->
+      <rect x="55" y="185" width="290" height="60" rx="8" fill="rgba(167,139,250,0.06)" stroke="rgba(167,139,250,0.2)" stroke-width="1" class="anim-pulse-p"/>
+      <text x="75" y="207" fill="#a78bfa" font-size="13" class="mono">2. spawn_background(</text>
+      <text x="90" y="225" fill="#a78bfa" font-size="13" class="mono">"npm test", "npm run lint")</text>
+      <text x="75" y="240" fill="#8a8f98" font-size="10" class="mono">发射即忘 fire-and-forget</text>
+
+      <!-- Arrow: spawn -->
+      <line x1="348" y1="215" x2="430" y2="145" stroke="#a78bfa" stroke-width="2" marker-end="url(#arr-p)" class="anim-flow-left"/>
+      <line x1="348" y1="215" x2="430" y2="275" stroke="#a78bfa" stroke-width="2" marker-end="url(#arr-p)" class="anim-flow-left"/>
+
+      <!-- Step 3: Agent continues working -->
+      <rect x="55" y="275" width="290" height="50" rx="8" fill="rgba(240,180,41,0.06)" stroke="rgba(240,180,41,0.2)" stroke-width="1"/>
+      <text x="75" y="297" fill="#ffd166" font-size="13" class="mono">3. Agent continues working</text>
+      <text x="75" y="313" fill="#8a8f98" font-size="10" class="mono">Agent 继续做其他事情，不等待</text>
+
+      <!-- Step 4: More work -->
+      <rect x="55" y="350" width="290" height="50" rx="8" fill="rgba(240,180,41,0.06)" stroke="rgba(240,180,41,0.2)" stroke-width="1"/>
+      <text x="75" y="372" fill="#ffd166" font-size="13" class="mono">4. Edit code, read files...</text>
+      <text x="75" y="388" fill="#8a8f98" font-size="10" class="mono">编辑代码、读取文件...</text>
+
+      <!-- Step 5: drain_notifications -->
+      <rect x="55" y="445" width="290" height="70" rx="8" fill="rgba(78,205,196,0.08)" stroke="rgba(78,205,196,0.25)" stroke-width="1.5" class="anim-pulse-p"/>
+      <text x="75" y="470" fill="#4ecdc4" font-size="14" class="mono" font-weight="700">5. drain_notifications()</text>
+      <text x="75" y="490" fill="#8a8f98" font-size="11" class="mono">Before next LLM call</text>
+      <text x="75" y="506" fill="#8a8f98" font-size="10" class="mono">每次 LLM 调用前清空通知队列</text>
+
+      <!-- Step 6: LLM call with results -->
+      <rect x="55" y="545" width="290" height="70" rx="8" fill="rgba(240,180,41,0.08)" stroke="rgba(240,180,41,0.3)" stroke-width="1"/>
+      <text x="75" y="570" fill="#ffd166" font-size="13" class="mono">6. LLM call (with results)</text>
+      <text x="75" y="590" fill="#8a8f98" font-size="11" class="mono">Results injected as context</text>
+      <text x="75" y="606" fill="#8a8f98" font-size="10" class="mono">结果作为上下文注入 LLM 调用</text>
+
+      <!-- Step 7: Agent responds -->
+      <rect x="55" y="645" width="290" height="55" rx="8" fill="rgba(74,222,128,0.06)" stroke="rgba(74,222,128,0.2)" stroke-width="1"/>
+      <text x="75" y="668" fill="#4ade80" font-size="13" class="mono">7. "Tests pass, 2 lint warns"</text>
+      <text x="75" y="688" fill="#8a8f98" font-size="10" class="mono">综合后台结果回复用户</text>
+
+      <!-- Vertical flow arrows on main thread -->
+      <line x1="200" y1="163" x2="200" y2="182" stroke="#f0b429" stroke-width="1.5" marker-end="url(#arr-am)" opacity="0.4"/>
+      <line x1="200" y1="248" x2="200" y2="272" stroke="#f0b429" stroke-width="1.5" marker-end="url(#arr-am)" opacity="0.4"/>
+      <line x1="200" y1="328" x2="200" y2="347" stroke="#f0b429" stroke-width="1.5" marker-end="url(#arr-am)" opacity="0.4"/>
+      <line x1="200" y1="403" x2="200" y2="442" stroke="#f0b429" stroke-width="1.5" marker-end="url(#arr-am)" opacity="0.4"/>
+      <line x1="200" y1="518" x2="200" y2="542" stroke="#f0b429" stroke-width="1.5" marker-end="url(#arr-am)" opacity="0.4"/>
+      <line x1="200" y1="618" x2="200" y2="642" stroke="#f0b429" stroke-width="1.5" marker-end="url(#arr-am)" opacity="0.4"/>
+    </g>
+
+    <!-- === RIGHT COLUMN: Background Threads === -->
+    <g class="anim-fadein anim-fadein-d2">
+      <rect x="440" y="30" width="300" height="380" rx="14" fill="rgba(167,139,250,0.03)" stroke="rgba(167,139,250,0.15)" stroke-width="1.5"/>
+      <text x="470" y="65" fill="#a78bfa" font-size="18" font-weight="800">BACKGROUND</text>
+      <text x="470" y="88" fill="#8a8f98" font-size="12">Parallel Execution 并行执行</text>
+
+      <!-- BG Task 1: npm test -->
+      <rect x="465" y="110" width="250" height="120" rx="10" fill="rgba(167,139,250,0.06)" stroke="rgba(167,139,250,0.2)" stroke-width="1"/>
+      <text x="485" y="138" fill="#a78bfa" font-size="13" class="mono" font-weight="700">npm test</text>
+
+      <!-- Spinner -->
+      <g transform="translate(690, 130)" style="animation: spinnerRotate 1.5s linear infinite;">
+        <circle r="8" fill="none" stroke="rgba(167,139,250,0.3)" stroke-width="2"/>
+        <path d="M 0,-8 A 8,8 0 0,1 8,0" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>
+      </g>
+
+      <!-- Progress bar -->
+      <rect x="485" y="152" width="150" height="6" rx="3" fill="rgba(255,255,255,0.05)"/>
+      <rect x="485" y="152" height="6" rx="3" fill="#a78bfa" class="progress-fill"/>
+
+      <text x="485" y="180" fill="#8a8f98" font-size="11" class="mono">Running 42 test suites...</text>
+      <text x="485" y="200" fill="#4ade80" font-size="11" class="mono">&#10003; Complete (exit 0)</text>
+      <text x="485" y="218" fill="#8a8f98" font-size="10" class="mono">Duration: 12.3s</text>
+
+      <!-- BG Task 2: npm run lint -->
+      <rect x="465" y="250" width="250" height="120" rx="10" fill="rgba(167,139,250,0.06)" stroke="rgba(167,139,250,0.2)" stroke-width="1"/>
+      <text x="485" y="278" fill="#a78bfa" font-size="13" class="mono" font-weight="700">npm run lint</text>
+
+      <!-- Spinner 2 -->
+      <g transform="translate(690, 270)" style="animation: spinnerRotate 2s linear infinite;">
+        <circle r="8" fill="none" stroke="rgba(167,139,250,0.3)" stroke-width="2"/>
+        <path d="M 0,-8 A 8,8 0 0,1 8,0" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>
+      </g>
+
+      <rect x="485" y="292" width="150" height="6" rx="3" fill="rgba(255,255,255,0.05)"/>
+      <rect x="485" y="292" height="6" rx="3" fill="#f0b429" class="progress-fill" style="animation-delay: 0.5s;"/>
+
+      <text x="485" y="320" fill="#8a8f98" font-size="11" class="mono">Checking 128 files...</text>
+      <text x="485" y="340" fill="#ffd166" font-size="11" class="mono">&#9888; 2 warnings (exit 0)</text>
+      <text x="485" y="358" fill="#8a8f98" font-size="10" class="mono">Duration: 8.1s</text>
+    </g>
+
+    <!-- === NOTIFICATION QUEUE === -->
+    <g class="anim-fadein anim-fadein-d3">
+      <rect x="440" y="440" width="300" height="180" rx="14" fill="rgba(78,205,196,0.04)" stroke="rgba(78,205,196,0.2)" stroke-width="1.5"/>
+      <text x="470" y="475" fill="#4ecdc4" font-size="16" font-weight="700">Notification Queue</text>
+      <text x="470" y="498" fill="#8a8f98" font-size="12">通知队列</text>
+
+      <!-- Notification items -->
+      <g class="notif-item">
+        <rect x="465" y="510" width="250" height="30" rx="6" fill="rgba(74,222,128,0.06)" stroke="rgba(74,222,128,0.15)" stroke-width="1"/>
+        <text x="480" y="530" fill="#4ade80" font-size="11" class="mono">&#10003; npm test: PASSED</text>
+      </g>
+
+      <g class="notif-item">
+        <rect x="465" y="548" width="250" height="30" rx="6" fill="rgba(255,209,102,0.06)" stroke="rgba(255,209,102,0.15)" stroke-width="1"/>
+        <text x="480" y="568" fill="#ffd166" font-size="11" class="mono">&#9888; npm lint: 2 warnings</text>
+      </g>
+
+      <!-- Arrow: queue → drain -->
+      <line x1="437" y1="530" x2="348" y2="480" stroke="#4ecdc4" stroke-width="2" marker-end="url(#arr-cy)" class="anim-flow-left"/>
+    </g>
+
+    <!-- === TIMELINE VIEW === -->
+    <g class="anim-fadein anim-fadein-d3" transform="translate(780, 30)">
+      <rect width="290" height="590" rx="14" fill="rgba(26,32,50,0.85)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+      <text x="20" y="35" fill="#f0b429" font-size="14" font-weight="700">Timeline View</text>
+      <text x="20" y="55" fill="#8a8f98" font-size="11">时间线视图</text>
+
+      <!-- Timeline axis -->
+      <line x1="40" y1="75" x2="40" y2="560" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+
+      <!-- T0: spawn -->
+      <circle cx="40" cy="95" r="5" fill="#a78bfa" stroke="none"/>
+      <text x="55" y="92" fill="#a78bfa" font-size="11" class="mono" font-weight="600">t0: spawn tasks</text>
+      <text x="55" y="108" fill="#8a8f98" font-size="10">Agent 发射后台任务</text>
+
+      <!-- T0-T1: Agent works (left bar) -->
+      <rect x="32" y="125" width="16" height="100" rx="4" fill="rgba(240,180,41,0.2)" stroke="rgba(240,180,41,0.3)" stroke-width="1"/>
+      <text x="55" y="160" fill="#ffd166" font-size="11">Agent works on</text>
+      <text x="55" y="176" fill="#ffd166" font-size="11">other things</text>
+      <text x="55" y="195" fill="#8a8f98" font-size="10">做其他事情</text>
+
+      <!-- Background tasks running (right bars) -->
+      <rect x="160" y="95" width="16" height="160" rx="4" fill="rgba(167,139,250,0.3)" stroke="rgba(167,139,250,0.4)" stroke-width="1"/>
+      <text x="185" y="140" fill="#a78bfa" font-size="10" class="mono">test</text>
+      <text x="185" y="155" fill="#8a8f98" font-size="9">12.3s</text>
+
+      <rect x="210" y="95" width="16" height="110" rx="4" fill="rgba(167,139,250,0.3)" stroke="rgba(167,139,250,0.4)" stroke-width="1"/>
+      <text x="235" y="140" fill="#a78bfa" font-size="10" class="mono">lint</text>
+      <text x="235" y="155" fill="#8a8f98" font-size="9">8.1s</text>
+
+      <!-- T1: lint done -->
+      <circle cx="40" cy="255" r="5" fill="#ffd166" stroke="none"/>
+      <text x="55" y="252" fill="#ffd166" font-size="11" class="mono" font-weight="600">t1: lint done</text>
+      <text x="55" y="268" fill="#8a8f98" font-size="10">Result queued</text>
+
+      <!-- T2: test done -->
+      <circle cx="40" cy="305" r="5" fill="#4ade80" stroke="none"/>
+      <text x="55" y="302" fill="#4ade80" font-size="11" class="mono" font-weight="600">t2: test done</text>
+      <text x="55" y="318" fill="#8a8f98" font-size="10">Result queued</text>
+
+      <!-- T3: drain -->
+      <circle cx="40" cy="380" r="7" fill="#4ecdc4" stroke="none" class="anim-pulse-p"/>
+      <text x="55" y="377" fill="#4ecdc4" font-size="11" class="mono" font-weight="700">t3: drain_notifications</text>
+      <text x="55" y="393" fill="#8a8f98" font-size="10">清空队列，注入结果</text>
+
+      <!-- Arrow: drain to LLM -->
+      <line x1="40" y1="395" x2="40" y2="430" stroke="#4ecdc4" stroke-width="2" stroke-dasharray="4 2"/>
+
+      <!-- T4: LLM call -->
+      <circle cx="40" cy="445" r="5" fill="#f0b429" stroke="none"/>
+      <text x="55" y="442" fill="#f0b429" font-size="11" class="mono" font-weight="600">t4: LLM call</text>
+      <text x="55" y="458" fill="#8a8f98" font-size="10">With all results attached</text>
+      <text x="55" y="474" fill="#8a8f98" font-size="10">附带所有结果</text>
+
+      <!-- T5: Response -->
+      <circle cx="40" cy="520" r="5" fill="#4ade80" stroke="none"/>
+      <text x="55" y="517" fill="#4ade80" font-size="11" class="mono" font-weight="600">t5: response</text>
+      <text x="55" y="533" fill="#8a8f98" font-size="10">"Tests pass, 2 lint warns"</text>
+
+      <!-- Key insight box -->
+      <rect x="15" y="550" width="260" height="30" rx="6" fill="rgba(240,180,41,0.06)" stroke="rgba(240,180,41,0.12)" stroke-width="1"/>
+      <text x="25" y="570" fill="#ffd166" font-size="11" font-weight="600">Total time: max(12.3, 8.1) = 12.3s</text>
+    </g>
+
+    <!-- Key insight: push vs pull -->
+    <g transform="translate(780, 640)">
+      <rect width="290" height="120" rx="14" fill="rgba(26,32,50,0.85)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+      <text x="20" y="30" fill="#4ecdc4" font-size="13" font-weight="700">Push not Pull 推送而非拉取</text>
+      <text x="20" y="55" fill="#8a8f98" font-size="12">Background tasks PUSH results</text>
+      <text x="20" y="73" fill="#8a8f98" font-size="12">to notification queue.</text>
+      <text x="20" y="97" fill="#8a8f98" font-size="12">Agent does NOT poll.</text>
+      <text x="20" y="113" fill="#ffd166" font-size="11" class="mono">push model = no wasted cycles</text>
+    </g>
+  </svg>
+</div>
+
+<div class="cards">
+  <div class="card">
+    <div class="card-num">CONCEPT 01</div>
+    <h3>不阻塞</h3>
+    <p>长时间运行的命令（测试、构建、lint）放入后台执行。Agent 不会卡住等待，可以继续编辑代码、读取文件、做其他工作。</p>
+    <p style="margin-top:10px;color:var(--purple);font-size:13px;font-family:'JetBrains Mono',monospace;">spawn → forget → keep working</p>
+  </div>
+  <div class="card">
+    <div class="card-num">CONCEPT 02</div>
+    <h3>通知队列</h3>
+    <p>后台任务完成后把结果推入通知队列（push model）。Agent 不需要轮询检查任务是否完成，结果会主动送达。</p>
+    <p style="margin-top:10px;color:var(--cyan);font-size:13px;font-family:'JetBrains Mono',monospace;">push, not poll = zero waste</p>
+  </div>
+  <div class="card">
+    <div class="card-num">CONCEPT 03</div>
+    <h3>drain 机制</h3>
+    <p>每次发起 LLM 调用之前，自动执行 drain_notifications() 清空队列。后台结果作为额外上下文注入到下一次 LLM 调用中。</p>
+    <p style="margin-top:10px;color:var(--amber);font-size:13px;font-family:'JetBrains Mono',monospace;">drain → inject → LLM call</p>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="nav-hint" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+  <a href="s07_task_system.html">
+    <span class="arrow">&larr;</span>
+    S07 Task System
+  </a>
+  <a href="index.html" style="color:var(--amber,#f0b429);text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:13px;padding:6px 14px;border-radius:6px;border:1px solid rgba(240,180,41,0.2);">⌂ 首页</a>
+  <a href="s09_agent_teams.html">
+    S09 Agent Teams
+    <span class="arrow">&rarr;</span>
+  </a>
+</nav>
+
+</div>
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  if (html.getAttribute('data-theme') === 'light') {
+    html.removeAttribute('data-theme');
+    btn.textContent = '🌙';
+    localStorage.setItem('theme', 'dark');
+  } else {
+    html.setAttribute('data-theme', 'light');
+    btn.textContent = '☀️';
+    localStorage.setItem('theme', 'light');
+  }
+}
+(function() {
+  if (localStorage.getItem('theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    var btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = '☀️';
+  }
+})();
+</script>
+</body>
+</html>

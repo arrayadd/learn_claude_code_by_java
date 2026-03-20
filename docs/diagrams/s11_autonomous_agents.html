@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S11 - Autonomous Agents 自主代理</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;600;700;800&display=swap');
+
+:root {
+  --bg: #111827;
+  --amber: #f0b429;
+  --amber-light: #ffd166;
+  --cyan: #4ecdc4;
+  --text: #e0e0e0;
+  --text-dim: #8899aa;
+  --glass-bg: rgba(15, 22, 40, 0.6);
+  --glass-border: rgba(240, 180, 41, 0.12);
+  --green: #51cf66;
+  --red: #ff6b6b;
+  --purple: #b197fc;
+}
+
+  [data-theme="light"] {
+    --bg-deep: #f8f6f1;
+    --bg-card: rgba(255, 255, 255, 0.85);
+    --bg-card-hover: rgba(255, 255, 255, 0.95);
+    --border-card: rgba(160, 120, 20, 0.18);
+    --border-card-hover: rgba(160, 120, 20, 0.4);
+    --amber: #b8860b;
+    --amber-light: #996600;
+    --cyan: #0d7377;
+    --cyan-dim: rgba(13, 115, 119, 0.2);
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a4a5e;
+    --text-dim: #7a7a8e;
+    --glow-amber: 0 0 20px rgba(184, 134, 11, 0.1);
+    --glow-cyan: 0 0 20px rgba(13, 115, 119, 0.1);
+  }
+
+  [data-theme="light"] body::before {
+    background-image:
+      linear-gradient(rgba(160, 120, 20, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(160, 120, 20, 0.06) 1px, transparent 1px);
+  }
+
+  [data-theme="light"] body::after {
+    background: radial-gradient(ellipse at 20% 50%, rgba(13, 115, 119, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(184, 134, 11, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(13, 115, 119, 0.04) 0%, transparent 50%);
+  }
+
+  .theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 999;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--border-card);
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    box-shadow: var(--glow-amber);
+  }
+  .theme-toggle:hover {
+    border-color: var(--amber);
+    transform: scale(1.1);
+  }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(240,180,41,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(240,180,41,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+header { text-align: center; margin-bottom: 48px; }
+
+.badge {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--amber);
+  background: rgba(240,180,41,0.1);
+  border: 1px solid rgba(240,180,41,0.25);
+  border-radius: 20px;
+  padding: 4px 16px;
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+
+h1 {
+  font-weight: 800;
+  font-size: clamp(28px, 5vw, 48px);
+  background: linear-gradient(135deg, var(--amber), var(--amber-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: clamp(16px, 2.5vw, 22px);
+  color: var(--text-dim);
+  font-weight: 300;
+}
+
+.diagram-wrap {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+  backdrop-filter: blur(12px);
+  margin-bottom: 48px;
+  overflow-x: auto;
+}
+
+@keyframes dashFlow {
+  to { stroke-dashoffset: -40; }
+}
+@keyframes dashFlowReverse {
+  to { stroke-dashoffset: 40; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+@keyframes spinSlow {
+  to { transform: rotate(360deg); }
+}
+@keyframes stateGlow {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(78,205,196,0.3)); }
+  50% { filter: drop-shadow(0 0 10px rgba(78,205,196,0.7)); }
+}
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.flow-line { stroke-dasharray: 8 6; animation: dashFlow 1.2s linear infinite; }
+.flow-line-rev { stroke-dasharray: 8 6; animation: dashFlowReverse 1.2s linear infinite; }
+.pulse-node { animation: pulse 2s ease-in-out infinite; }
+.glow-state { animation: stateGlow 2.5s ease-in-out infinite; }
+.blink { animation: blink 1.5s ease-in-out infinite; }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 28px;
+  backdrop-filter: blur(12px);
+  transition: transform 0.3s, border-color 0.3s;
+  animation: fadeSlideUp 0.6s ease both;
+}
+.card:nth-child(2) { animation-delay: 0.12s; }
+.card:nth-child(3) { animation-delay: 0.24s; }
+.card:hover { transform: translateY(-4px); border-color: rgba(240,180,41,0.35); }
+
+.card-num { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--cyan); margin-bottom: 8px; }
+.card h3 { font-weight: 700; font-size: 20px; color: var(--amber-light); margin-bottom: 10px; }
+.card p { font-size: 15px; line-height: 1.65; color: var(--text-dim); }
+.card code { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--cyan); background: rgba(78,205,196,0.08); padding: 1px 6px; border-radius: 4px; }
+
+.nav-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 24px;
+  border-top: 1px solid rgba(240,180,41,0.1);
+}
+.nav-bottom a { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--cyan); text-decoration: none; transition: color 0.2s; }
+.nav-bottom a:hover { color: var(--amber-light); }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" title="Toggle light/dark theme" onclick="toggleTheme()">🌙</button>
+<div class="container">
+
+<header>
+  <div class="badge">SESSION 11</div>
+  <h1>Autonomous Agents 自主代理</h1>
+  <p class="subtitle">Agent 自己找活干 &mdash; Agents That Find Their Own Work</p>
+</header>
+
+<!-- Main Diagram: Lifecycle State Machine -->
+<div class="diagram-wrap">
+<svg viewBox="0 0 1100 700" width="100%" xmlns="http://www.w3.org/2000/svg" style="min-width:800px">
+  <defs>
+    <marker id="arrowAmber" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#f0b429"/></marker>
+    <marker id="arrowCyan" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#4ecdc4"/></marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#51cf66"/></marker>
+    <marker id="arrowRed" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#ff6b6b"/></marker>
+    <marker id="arrowPurple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#b197fc"/></marker>
+  </defs>
+
+  <text x="550" y="28" text-anchor="middle" fill="rgba(240,180,41,0.15)" font-family="Outfit" font-size="15" font-weight="700" letter-spacing="2">AUTONOMOUS AGENT LIFECYCLE STATE MACHINE</text>
+
+  <!-- ===== SPAWN state ===== -->
+  <circle cx="120" cy="120" r="40" fill="rgba(240,180,41,0.08)" stroke="#f0b429" stroke-width="2"/>
+  <text x="120" y="116" text-anchor="middle" fill="#ffd166" font-family="Outfit" font-size="16" font-weight="700">SPAWN</text>
+  <text x="120" y="134" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="9">initialize</text>
+  <!-- Small start marker -->
+  <circle cx="55" cy="120" r="6" fill="#f0b429"/>
+  <line x1="61" y1="120" x2="78" y2="120" stroke="#f0b429" stroke-width="2" marker-end="url(#arrowAmber)"/>
+
+  <!-- SPAWN -> WORK -->
+  <path d="M160,120 L280,120" fill="none" stroke="#f0b429" stroke-width="2" class="flow-line" marker-end="url(#arrowAmber)"/>
+  <text x="220" y="110" text-anchor="middle" fill="#f0b429" font-family="JetBrains Mono" font-size="10">start</text>
+
+  <!-- ===== WORK state ===== -->
+  <rect x="290" y="80" width="200" height="80" rx="14" fill="rgba(78,205,196,0.08)" stroke="#4ecdc4" stroke-width="2.5" class="glow-state"/>
+  <text x="390" y="112" text-anchor="middle" fill="#4ecdc4" font-family="Outfit" font-size="20" font-weight="800">WORK</text>
+  <text x="390" y="132" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="10">LLM calls + tool execution</text>
+  <!-- Looping arrow on WORK -->
+  <path d="M490,100 Q530,70 490,90" fill="none" stroke="rgba(78,205,196,0.4)" stroke-width="1" stroke-dasharray="3 2"/>
+  <text x="525" y="75" fill="rgba(78,205,196,0.5)" font-family="JetBrains Mono" font-size="8">tool_use</text>
+
+  <!-- WORK -> IDLE (no more tool_use) -->
+  <path d="M390,160 L390,230" fill="none" stroke="#f0b429" stroke-width="2" class="flow-line" marker-end="url(#arrowAmber)"/>
+  <text x="410" y="198" fill="#f0b429" font-family="JetBrains Mono" font-size="10">no tool_use</text>
+  <text x="410" y="212" fill="#8899aa" font-family="JetBrains Mono" font-size="9">stop_reason=end_turn</text>
+
+  <!-- ===== IDLE state (the big focus area) ===== -->
+  <rect x="240" y="240" width="300" height="240" rx="16" fill="rgba(240,180,41,0.04)" stroke="#f0b429" stroke-width="2"/>
+  <rect x="240" y="240" width="300" height="36" rx="16" fill="rgba(240,180,41,0.1)"/>
+  <text x="390" y="264" text-anchor="middle" fill="#ffd166" font-family="Outfit" font-size="18" font-weight="800">IDLE</text>
+  <circle cx="265" cy="258" r="5" fill="#f0b429" class="blink"/>
+
+  <!-- Polling loop info -->
+  <text x="270" y="296" fill="#8899aa" font-family="JetBrains Mono" font-size="11">every 5s, up to 60s timeout</text>
+
+  <!-- Check 1: inbox -->
+  <rect x="265" y="310" width="250" height="30" rx="6" fill="rgba(78,205,196,0.06)" stroke="rgba(78,205,196,0.2)" stroke-width="1"/>
+  <text x="280" y="330" fill="#4ecdc4" font-family="JetBrains Mono" font-size="11">1. check inbox</text>
+  <text x="440" y="330" fill="#8899aa" font-family="JetBrains Mono" font-size="10">has msg?</text>
+
+  <!-- Check 2: tasks -->
+  <rect x="265" y="350" width="250" height="30" rx="6" fill="rgba(240,180,41,0.06)" stroke="rgba(240,180,41,0.2)" stroke-width="1"/>
+  <text x="280" y="370" fill="#f0b429" font-family="JetBrains Mono" font-size="11">2. scan .tasks/</text>
+  <text x="440" y="370" fill="#8899aa" font-family="JetBrains Mono" font-size="10">unclaimed?</text>
+
+  <!-- Check 3: timeout -->
+  <rect x="265" y="390" width="250" height="30" rx="6" fill="rgba(255,107,107,0.06)" stroke="rgba(255,107,107,0.2)" stroke-width="1"/>
+  <text x="280" y="410" fill="#ff6b6b" font-family="JetBrains Mono" font-size="11">3. timeout 60s</text>
+  <text x="440" y="410" fill="#8899aa" font-family="JetBrains Mono" font-size="10">no activity</text>
+
+  <!-- Loop arrow (polling) -->
+  <path d="M265,440 Q245,460 245,380 Q245,340 265,320" fill="none" stroke="rgba(240,180,41,0.3)" stroke-width="1.5" stroke-dasharray="4 3" class="flow-line" marker-end="url(#arrowAmber)"/>
+  <text x="228" y="385" text-anchor="middle" fill="rgba(240,180,41,0.5)" font-family="JetBrains Mono" font-size="8" transform="rotate(-90, 228, 385)">poll 5s</text>
+
+  <!-- IDLE -> WORK (has message) -->
+  <path d="M515,325 Q600,300 500,130 Q495,120 490,120" fill="none" stroke="#4ecdc4" stroke-width="2" class="flow-line" marker-end="url(#arrowCyan)"/>
+  <text x="570" y="228" fill="#4ecdc4" font-family="JetBrains Mono" font-size="10">resume</text>
+  <text x="570" y="243" fill="#8899aa" font-family="JetBrains Mono" font-size="9">(inbox msg)</text>
+
+  <!-- IDLE -> WORK (task claimed) -->
+  <path d="M515,365 Q630,350 540,140 Q535,125 490,125" fill="none" stroke="#f0b429" stroke-width="1.5" stroke-dasharray="6 4" class="flow-line" marker-end="url(#arrowAmber)"/>
+  <text x="615" y="290" fill="#f0b429" font-family="JetBrains Mono" font-size="10">resume</text>
+  <text x="615" y="305" fill="#8899aa" font-family="JetBrains Mono" font-size="9">(task claimed)</text>
+
+  <!-- IDLE -> SHUTDOWN (timeout) -->
+  <path d="M515,405 L700,500" fill="none" stroke="#ff6b6b" stroke-width="2" class="flow-line" marker-end="url(#arrowRed)"/>
+  <text x="620" y="440" fill="#ff6b6b" font-family="JetBrains Mono" font-size="10">timeout</text>
+
+  <!-- ===== SHUTDOWN state ===== -->
+  <rect x="710" y="480" width="160" height="55" rx="14" fill="rgba(255,107,107,0.08)" stroke="#ff6b6b" stroke-width="2"/>
+  <text x="790" y="505" text-anchor="middle" fill="#ff6b6b" font-family="Outfit" font-size="18" font-weight="700">SHUTDOWN</text>
+  <text x="790" y="525" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="9">cleanup &amp; exit</text>
+  <!-- End marker -->
+  <circle cx="900" cy="507" r="10" fill="none" stroke="#ff6b6b" stroke-width="2"/>
+  <circle cx="900" cy="507" r="5" fill="#ff6b6b"/>
+  <line x1="870" y1="507" x2="888" y2="507" stroke="#ff6b6b" stroke-width="2"/>
+
+  <!-- ===== Auto-claim flow detail ===== -->
+  <rect x="620" y="570" width="440" height="110" rx="12" fill="rgba(240,180,41,0.03)" stroke="rgba(240,180,41,0.12)" stroke-width="1"/>
+  <text x="645" y="596" fill="#ffd166" font-family="Outfit" font-size="14" font-weight="700">Auto-Claim Flow 自动认领流程</text>
+
+  <rect x="640" y="610" width="70" height="28" rx="6" fill="rgba(240,180,41,0.1)"/><text x="675" y="629" text-anchor="middle" fill="#ffd166" font-family="JetBrains Mono" font-size="10">scan</text>
+  <line x1="715" y1="624" x2="740" y2="624" stroke="#f0b429" stroke-width="1.2" marker-end="url(#arrowAmber)"/>
+
+  <rect x="745" y="610" width="70" height="28" rx="6" fill="rgba(240,180,41,0.1)"/><text x="780" y="629" text-anchor="middle" fill="#ffd166" font-family="JetBrains Mono" font-size="10">filter</text>
+  <line x1="820" y1="624" x2="845" y2="624" stroke="#f0b429" stroke-width="1.2" marker-end="url(#arrowAmber)"/>
+
+  <rect x="850" y="610" width="70" height="28" rx="6" fill="rgba(78,205,196,0.1)"/><text x="885" y="629" text-anchor="middle" fill="#4ecdc4" font-family="JetBrains Mono" font-size="10">claim</text>
+  <line x1="925" y1="624" x2="950" y2="624" stroke="#4ecdc4" stroke-width="1.2" marker-end="url(#arrowCyan)"/>
+
+  <rect x="955" y="610" width="85" height="28" rx="6" fill="rgba(78,205,196,0.1)"/><text x="997" y="629" text-anchor="middle" fill="#4ecdc4" font-family="JetBrains Mono" font-size="10">execute</text>
+
+  <text x="780" y="660" fill="#8899aa" font-family="JetBrains Mono" font-size="9">filter: status=pending, no owner, no blockedBy</text>
+
+  <!-- ===== Identity re-injection box ===== -->
+  <rect x="40" y="530" width="480" height="120" rx="12" fill="rgba(177,151,252,0.04)" stroke="rgba(177,151,252,0.2)" stroke-width="1.5"/>
+  <text x="65" y="558" fill="#b197fc" font-family="Outfit" font-size="15" font-weight="700">Identity Re-injection 身份重注入</text>
+  <text x="65" y="580" fill="#8899aa" font-family="JetBrains Mono" font-size="11">When context is compacted (short), re-inject:</text>
+  <rect x="65" y="592" width="430" height="45" rx="6" fill="rgba(26,34,52,0.8)" stroke="rgba(177,151,252,0.12)" stroke-width="1"/>
+  <text x="80" y="610" fill="#b197fc" font-family="JetBrains Mono" font-size="10">"You are {name}, role: {role}. Your inbox:</text>
+  <text x="80" y="626" fill="#b197fc" font-family="JetBrains Mono" font-size="10"> {inbox_path}. Current task: {task_id}"</text>
+
+  <!-- Arrow from identity to WORK -->
+  <path d="M280,530 Q280,500 310,160" fill="none" stroke="rgba(177,151,252,0.3)" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrowPurple)"/>
+  <text x="265" y="490" fill="rgba(177,151,252,0.6)" font-family="JetBrains Mono" font-size="9" transform="rotate(-80, 265, 490)">inject on compact</text>
+</svg>
+</div>
+
+<!-- Concept Cards -->
+<div class="cards">
+  <div class="card">
+    <div class="card-num">CONCEPT 01</div>
+    <h3>自主 = 轮询 Autonomous = Polling</h3>
+    <p>自主性的本质就是 IDLE 循环。Agent 不等待指令，而是每 <code>5s</code> 主动检查收件箱和任务板。超过 <code>60s</code> 无活动则自动关闭，节省资源。</p>
+  </div>
+  <div class="card">
+    <div class="card-num">CONCEPT 02</div>
+    <h3>自动认领 Auto-Claim</h3>
+    <p>扫描 <code>.tasks/</code> 目录，过滤条件：<code>status=pending</code>、无 owner、无 blockedBy。找到匹配任务后写入自己的 agent_id 完成认领，然后执行。</p>
+  </div>
+  <div class="card">
+    <div class="card-num">CONCEPT 03</div>
+    <h3>身份重注入 Identity Re-injection</h3>
+    <p>当上下文被压缩（compact）后，Agent 可能忘记自己是谁。此时需要重新注入身份信息：名字、角色、收件箱路径、当前任务 ID。这样 Agent 能无缝继续工作。</p>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="nav-hint" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+  <a href="s10_team_protocols.html">
+    <span class="arrow">&larr;</span>
+    S10 Team Protocols
+  </a>
+  <a href="index.html" style="color:var(--amber,#f0b429);text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:13px;padding:6px 14px;border-radius:6px;border:1px solid rgba(240,180,41,0.2);">⌂ 首页</a>
+  <a href="s12_worktree_task_isolation.html">
+    S12 Worktree Isolation
+    <span class="arrow">&rarr;</span>
+  </a>
+</nav>
+
+</div>
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  if (html.getAttribute('data-theme') === 'light') {
+    html.removeAttribute('data-theme');
+    btn.textContent = '🌙';
+    localStorage.setItem('theme', 'dark');
+  } else {
+    html.setAttribute('data-theme', 'light');
+    btn.textContent = '☀️';
+    localStorage.setItem('theme', 'light');
+  }
+}
+(function() {
+  if (localStorage.getItem('theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    var btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = '☀️';
+  }
+})();
+</script>
+</body>
+</html>

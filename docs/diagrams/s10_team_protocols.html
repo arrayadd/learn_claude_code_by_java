@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S10 - Team Protocols 团队协议</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;600;700;800&display=swap');
+
+:root {
+  --bg: #111827;
+  --amber: #f0b429;
+  --amber-light: #ffd166;
+  --cyan: #4ecdc4;
+  --text: #e0e0e0;
+  --text-dim: #8899aa;
+  --glass-bg: rgba(15, 22, 40, 0.6);
+  --glass-border: rgba(240, 180, 41, 0.12);
+  --green: #51cf66;
+  --red: #ff6b6b;
+}
+
+  [data-theme="light"] {
+    --bg-deep: #f8f6f1;
+    --bg-card: rgba(255, 255, 255, 0.85);
+    --bg-card-hover: rgba(255, 255, 255, 0.95);
+    --border-card: rgba(160, 120, 20, 0.18);
+    --border-card-hover: rgba(160, 120, 20, 0.4);
+    --amber: #b8860b;
+    --amber-light: #996600;
+    --cyan: #0d7377;
+    --cyan-dim: rgba(13, 115, 119, 0.2);
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a4a5e;
+    --text-dim: #7a7a8e;
+    --glow-amber: 0 0 20px rgba(184, 134, 11, 0.1);
+    --glow-cyan: 0 0 20px rgba(13, 115, 119, 0.1);
+  }
+
+  [data-theme="light"] body::before {
+    background-image:
+      linear-gradient(rgba(160, 120, 20, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(160, 120, 20, 0.06) 1px, transparent 1px);
+  }
+
+  [data-theme="light"] body::after {
+    background: radial-gradient(ellipse at 20% 50%, rgba(13, 115, 119, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(184, 134, 11, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(13, 115, 119, 0.04) 0%, transparent 50%);
+  }
+
+  .theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 999;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--border-card);
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    box-shadow: var(--glow-amber);
+  }
+  .theme-toggle:hover {
+    border-color: var(--amber);
+    transform: scale(1.1);
+  }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(240,180,41,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(240,180,41,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+header { text-align: center; margin-bottom: 48px; }
+
+.badge {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--amber);
+  background: rgba(240,180,41,0.1);
+  border: 1px solid rgba(240,180,41,0.25);
+  border-radius: 20px;
+  padding: 4px 16px;
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+
+h1 {
+  font-weight: 800;
+  font-size: clamp(28px, 5vw, 48px);
+  background: linear-gradient(135deg, var(--amber), var(--amber-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: clamp(16px, 2.5vw, 22px);
+  color: var(--text-dim);
+  font-weight: 300;
+}
+
+.diagram-wrap {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+  backdrop-filter: blur(12px);
+  margin-bottom: 48px;
+  overflow-x: auto;
+}
+
+@keyframes dashFlow {
+  to { stroke-dashoffset: -40; }
+}
+@keyframes dashFlowSlow {
+  to { stroke-dashoffset: -60; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+@keyframes stateGlow {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(240,180,41,0.3)); }
+  50% { filter: drop-shadow(0 0 8px rgba(240,180,41,0.6)); }
+}
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.flow-line {
+  stroke-dasharray: 8 6;
+  animation: dashFlow 1.2s linear infinite;
+}
+.flow-line-slow {
+  stroke-dasharray: 10 8;
+  animation: dashFlowSlow 2s linear infinite;
+}
+.pulse-node { animation: pulse 2s ease-in-out infinite; }
+.glow-state { animation: stateGlow 2.5s ease-in-out infinite; }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 28px;
+  backdrop-filter: blur(12px);
+  transition: transform 0.3s, border-color 0.3s;
+  animation: fadeSlideUp 0.6s ease both;
+}
+.card:nth-child(2) { animation-delay: 0.12s; }
+.card:nth-child(3) { animation-delay: 0.24s; }
+.card:hover { transform: translateY(-4px); border-color: rgba(240,180,41,0.35); }
+
+.card-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--cyan);
+  margin-bottom: 8px;
+}
+
+.card h3 {
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--amber-light);
+  margin-bottom: 10px;
+}
+
+.card p {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-dim);
+}
+
+.card code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--cyan);
+  background: rgba(78,205,196,0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.nav-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 24px;
+  border-top: 1px solid rgba(240,180,41,0.1);
+}
+
+.nav-bottom a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--cyan);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-bottom a:hover { color: var(--amber-light); }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" title="Toggle light/dark theme" onclick="toggleTheme()">🌙</button>
+<div class="container">
+
+<header>
+  <div class="badge">SESSION 10</div>
+  <h1>Team Protocols 团队协议</h1>
+  <p class="subtitle">同一个 request_id 关联模式，两个领域 &mdash; Two Domains, One Correlation Pattern</p>
+</header>
+
+<!-- Main Diagram -->
+<div class="diagram-wrap">
+<svg viewBox="0 0 1100 680" width="100%" xmlns="http://www.w3.org/2000/svg" style="min-width:800px">
+  <defs>
+    <marker id="arrowAmber" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#f0b429"/>
+    </marker>
+    <marker id="arrowCyan" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#4ecdc4"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#51cf66"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#ff6b6b"/>
+    </marker>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+
+  <!-- Section Labels -->
+  <text x="250" y="30" text-anchor="middle" fill="rgba(255,107,107,0.4)" font-family="Outfit" font-size="14" font-weight="700" letter-spacing="2">SHUTDOWN PROTOCOL</text>
+  <text x="830" y="30" text-anchor="middle" fill="rgba(78,205,196,0.4)" font-family="Outfit" font-size="14" font-weight="700" letter-spacing="2">PLAN APPROVAL PROTOCOL</text>
+
+  <!-- Divider -->
+  <line x1="530" y1="45" x2="530" y2="500" stroke="rgba(240,180,41,0.08)" stroke-width="1" stroke-dasharray="6 4"/>
+
+  <!-- ========== LEFT: SHUTDOWN PROTOCOL FSM ========== -->
+
+  <!-- Lead box -->
+  <rect x="50" y="60" width="170" height="55" rx="10" fill="rgba(240,180,41,0.06)" stroke="#f0b429" stroke-width="1.5"/>
+  <circle cx="72" cy="88" r="5" fill="#f0b429" class="pulse-node"/>
+  <text x="140" y="83" text-anchor="middle" fill="#ffd166" font-family="Outfit" font-size="15" font-weight="700">Lead</text>
+  <text x="140" y="102" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="9">initiates shutdown</text>
+
+  <!-- Teammate box -->
+  <rect x="290" y="60" width="170" height="55" rx="10" fill="rgba(78,205,196,0.06)" stroke="#4ecdc4" stroke-width="1.5"/>
+  <circle cx="312" cy="88" r="5" fill="#4ecdc4" class="pulse-node"/>
+  <text x="380" y="83" text-anchor="middle" fill="#4ecdc4" font-family="Outfit" font-size="15" font-weight="700">Teammate</text>
+  <text x="380" y="102" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="9">responds to shutdown</text>
+
+  <!-- Step 1: shutdown_request -->
+  <path d="M220,88 L280,88" fill="none" stroke="#f0b429" stroke-width="2" class="flow-line" marker-end="url(#arrowAmber)"/>
+  <rect x="140" y="130" width="240" height="45" rx="8" fill="rgba(240,180,41,0.05)" stroke="rgba(240,180,41,0.2)" stroke-width="1"/>
+  <text x="260" y="148" text-anchor="middle" fill="#f0b429" font-family="JetBrains Mono" font-size="11" font-weight="600">shutdown_request</text>
+  <text x="260" y="165" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="9">{ request_id: "sr_001" }</text>
+
+  <!-- Pending state -->
+  <rect x="200" y="200" width="120" height="40" rx="20" fill="rgba(240,180,41,0.1)" stroke="#f0b429" stroke-width="2" class="glow-state"/>
+  <text x="260" y="225" text-anchor="middle" fill="#ffd166" font-family="Outfit" font-size="14" font-weight="700">PENDING</text>
+
+  <!-- Fork -->
+  <line x1="260" y1="240" x2="260" y2="280" stroke="rgba(240,180,41,0.3)" stroke-width="1.5"/>
+
+  <!-- Approved branch -->
+  <path d="M260,280 Q260,300 160,310" fill="none" stroke="#51cf66" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <rect x="70" y="300" width="100" height="40" rx="20" fill="rgba(81,207,102,0.1)" stroke="#51cf66" stroke-width="2"/>
+  <text x="120" y="325" text-anchor="middle" fill="#51cf66" font-family="Outfit" font-size="14" font-weight="700">APPROVED</text>
+
+  <!-- Response line approved -->
+  <rect x="60" y="355" width="220" height="40" rx="8" fill="rgba(81,207,102,0.04)" stroke="rgba(81,207,102,0.15)" stroke-width="1"/>
+  <text x="170" y="372" text-anchor="middle" fill="#51cf66" font-family="JetBrains Mono" font-size="10">shutdown_response</text>
+  <text x="170" y="386" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="9">{ request_id, approve: true }</text>
+
+  <!-- Rejected branch -->
+  <path d="M260,280 Q260,300 380,310" fill="none" stroke="#ff6b6b" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <rect x="340" y="300" width="100" height="40" rx="20" fill="rgba(255,107,107,0.1)" stroke="#ff6b6b" stroke-width="2"/>
+  <text x="390" y="325" text-anchor="middle" fill="#ff6b6b" font-family="Outfit" font-size="14" font-weight="700">REJECTED</text>
+
+  <rect x="295" y="355" width="220" height="40" rx="8" fill="rgba(255,107,107,0.04)" stroke="rgba(255,107,107,0.15)" stroke-width="1"/>
+  <text x="405" y="372" text-anchor="middle" fill="#ff6b6b" font-family="JetBrains Mono" font-size="10">shutdown_response</text>
+  <text x="405" y="386" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="9">{ request_id, approve: false }</text>
+
+  <!-- Teammate action labels -->
+  <text x="120" y="415" text-anchor="middle" fill="rgba(81,207,102,0.5)" font-family="JetBrains Mono" font-size="9">Teammate exits cleanly</text>
+  <text x="405" y="415" text-anchor="middle" fill="rgba(255,107,107,0.5)" font-family="JetBrains Mono" font-size="9">Teammate continues work</text>
+
+  <!-- ========== RIGHT: PLAN APPROVAL PROTOCOL FSM ========== -->
+
+  <!-- Teammate box -->
+  <rect x="610" y="60" width="170" height="55" rx="10" fill="rgba(78,205,196,0.06)" stroke="#4ecdc4" stroke-width="1.5"/>
+  <circle cx="632" cy="88" r="5" fill="#4ecdc4" class="pulse-node"/>
+  <text x="700" y="83" text-anchor="middle" fill="#4ecdc4" font-family="Outfit" font-size="15" font-weight="700">Teammate</text>
+  <text x="700" y="102" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="9">submits plan</text>
+
+  <!-- Lead box -->
+  <rect x="850" y="60" width="170" height="55" rx="10" fill="rgba(240,180,41,0.06)" stroke="#f0b429" stroke-width="1.5"/>
+  <circle cx="872" cy="88" r="5" fill="#f0b429" class="pulse-node"/>
+  <text x="940" y="83" text-anchor="middle" fill="#ffd166" font-family="Outfit" font-size="15" font-weight="700">Lead</text>
+  <text x="940" y="102" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="9">reviews plan</text>
+
+  <!-- Step 1: plan submission -->
+  <path d="M780,88 L840,88" fill="none" stroke="#4ecdc4" stroke-width="2" class="flow-line" marker-end="url(#arrowCyan)"/>
+  <rect x="680" y="130" width="260" height="45" rx="8" fill="rgba(78,205,196,0.05)" stroke="rgba(78,205,196,0.2)" stroke-width="1"/>
+  <text x="810" y="148" text-anchor="middle" fill="#4ecdc4" font-family="JetBrains Mono" font-size="11" font-weight="600">message { plan_text }</text>
+  <text x="810" y="165" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="9">{ request_id: "pa_042", plan: "..." }</text>
+
+  <!-- Pending state -->
+  <rect x="755" y="200" width="120" height="40" rx="20" fill="rgba(240,180,41,0.1)" stroke="#f0b429" stroke-width="2" class="glow-state"/>
+  <text x="815" y="225" text-anchor="middle" fill="#ffd166" font-family="Outfit" font-size="14" font-weight="700">PENDING</text>
+
+  <!-- Fork -->
+  <line x1="815" y1="240" x2="815" y2="280" stroke="rgba(240,180,41,0.3)" stroke-width="1.5"/>
+
+  <!-- Approved branch -->
+  <path d="M815,280 Q815,300 715,310" fill="none" stroke="#51cf66" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <rect x="660" y="300" width="100" height="40" rx="20" fill="rgba(81,207,102,0.1)" stroke="#51cf66" stroke-width="2"/>
+  <text x="710" y="325" text-anchor="middle" fill="#51cf66" font-family="Outfit" font-size="14" font-weight="700">APPROVED</text>
+
+  <rect x="620" y="355" width="240" height="40" rx="8" fill="rgba(81,207,102,0.04)" stroke="rgba(81,207,102,0.15)" stroke-width="1"/>
+  <text x="740" y="372" text-anchor="middle" fill="#51cf66" font-family="JetBrains Mono" font-size="10">plan_approval</text>
+  <text x="740" y="386" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="9">{ request_id, approve: true }</text>
+
+  <!-- Rejected branch -->
+  <path d="M815,280 Q815,300 935,310" fill="none" stroke="#ff6b6b" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <rect x="895" y="300" width="100" height="40" rx="20" fill="rgba(255,107,107,0.1)" stroke="#ff6b6b" stroke-width="2"/>
+  <text x="945" y="325" text-anchor="middle" fill="#ff6b6b" font-family="Outfit" font-size="14" font-weight="700">REJECTED</text>
+
+  <rect x="860" y="355" width="240" height="50" rx="8" fill="rgba(255,107,107,0.04)" stroke="rgba(255,107,107,0.15)" stroke-width="1"/>
+  <text x="980" y="372" text-anchor="middle" fill="#ff6b6b" font-family="JetBrains Mono" font-size="10">plan_approval</text>
+  <text x="980" y="386" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="9">{ request_id, approve: false,</text>
+  <text x="980" y="398" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="9">  feedback: "revise scope" }</text>
+
+  <text x="710" y="415" text-anchor="middle" fill="rgba(81,207,102,0.5)" font-family="JetBrains Mono" font-size="9">Teammate begins execution</text>
+  <text x="980" y="425" text-anchor="middle" fill="rgba(255,107,107,0.5)" font-family="JetBrains Mono" font-size="9">Teammate revises plan</text>
+
+  <!-- ========== CENTER: Shared Pattern ========== -->
+  <rect x="420" y="460" width="260" height="100" rx="12" fill="rgba(240,180,41,0.06)" stroke="#f0b429" stroke-width="2" stroke-dasharray="6 3"/>
+  <text x="550" y="488" text-anchor="middle" fill="#ffd166" font-family="Outfit" font-size="16" font-weight="700">Shared Pattern</text>
+  <text x="550" y="488" text-anchor="middle" fill="#ffd166" font-family="Outfit" font-size="16" font-weight="700">Shared Pattern</text>
+  <text x="550" y="510" text-anchor="middle" fill="#f0b429" font-family="JetBrains Mono" font-size="12">request_id correlation</text>
+  <text x="550" y="530" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="10">send(req_id) -> wait -> match(req_id)</text>
+  <text x="550" y="548" text-anchor="middle" fill="#8899aa" font-family="JetBrains Mono" font-size="10">async request-response over JSONL</text>
+
+  <!-- Connection lines from center to both FSMs -->
+  <path d="M420,510 Q350,510 260,400" fill="none" stroke="rgba(240,180,41,0.2)" stroke-width="1.5" class="flow-line-slow"/>
+  <path d="M680,510 Q750,510 815,400" fill="none" stroke="rgba(240,180,41,0.2)" stroke-width="1.5" class="flow-line-slow"/>
+
+  <!-- Sequence diagram strip at bottom -->
+  <rect x="50" y="590" width="1000" height="70" rx="10" fill="rgba(26,34,52,0.5)" stroke="rgba(78,205,196,0.1)" stroke-width="1"/>
+  <text x="70" y="615" fill="#4ecdc4" font-family="Outfit" font-size="13" font-weight="700">Protocol Sequence:</text>
+  <text x="70" y="640" fill="#8899aa" font-family="JetBrains Mono" font-size="11">A sends request(type, request_id)</text>
+  <text x="390" y="640" fill="#f0b429" font-family="JetBrains Mono" font-size="11">--></text>
+  <text x="420" y="640" fill="#8899aa" font-family="JetBrains Mono" font-size="11">B receives, processes</text>
+  <text x="660" y="640" fill="#f0b429" font-family="JetBrains Mono" font-size="11">--></text>
+  <text x="690" y="640" fill="#8899aa" font-family="JetBrains Mono" font-size="11">B sends response(request_id, approve)</text>
+</svg>
+</div>
+
+<!-- Concept Cards -->
+<div class="cards">
+  <div class="card">
+    <div class="card-num">CONCEPT 01</div>
+    <h3>request_id 关联 Correlation</h3>
+    <p>异步协议的锚点。每个请求都带有唯一的 <code>request_id</code>，响应必须引用同一个 ID。这样在消息洪流中也能精确匹配请求和响应。</p>
+  </div>
+  <div class="card">
+    <div class="card-num">CONCEPT 02</div>
+    <h3>关闭协议 Shutdown Protocol</h3>
+    <p>优雅关闭，非强制终止。Lead 发送 <code>shutdown_request</code>，Teammate 可以拒绝（正在做关键工作）。只有 approve 后才会真正退出，确保不会丢失进行中的工作。</p>
+  </div>
+  <div class="card">
+    <div class="card-num">CONCEPT 03</div>
+    <h3>计划审批 Plan Approval</h3>
+    <p>重大工作前需要审批。Teammate 提交 plan_text，Lead 审核后可以 approve（执行）或 reject 并附上 <code>feedback</code>（修改方向），实现人在回路的管控。</p>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="nav-hint" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+  <a href="s09_agent_teams.html">
+    <span class="arrow">&larr;</span>
+    S09 Agent Teams
+  </a>
+  <a href="index.html" style="color:var(--amber,#f0b429);text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:13px;padding:6px 14px;border-radius:6px;border:1px solid rgba(240,180,41,0.2);">⌂ 首页</a>
+  <a href="s11_autonomous_agents.html">
+    S11 Autonomous Agents
+    <span class="arrow">&rarr;</span>
+  </a>
+</nav>
+
+</div>
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  if (html.getAttribute('data-theme') === 'light') {
+    html.removeAttribute('data-theme');
+    btn.textContent = '🌙';
+    localStorage.setItem('theme', 'dark');
+  } else {
+    html.setAttribute('data-theme', 'light');
+    btn.textContent = '☀️';
+    localStorage.setItem('theme', 'light');
+  }
+}
+(function() {
+  if (localStorage.getItem('theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    var btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = '☀️';
+  }
+})();
+</script>
+</body>
+</html>
