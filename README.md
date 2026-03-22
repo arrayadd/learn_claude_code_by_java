@@ -1,223 +1,293 @@
-# Learn Claude Code by Java
+<div align="center">
+
+# 🤖 Learn Claude Code by Java
+
+**用 12 节课，从一个 `while` 循环出发，亲手造一个 AI Agent**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Java](https://img.shields.io/badge/Java-1.8+-orange.svg)](https://www.oracle.com/java/)
+[![Stars](https://img.shields.io/github/stars/arrayadd/learn_claude_code_by_java?style=social)](https://github.com/arrayadd/learn_claude_code_by_java/stargazers)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-> **用 12 节课从零拆解 AI Agent 的秘密，从零打造一个自己的 Claude Code**
->
-> Java (JDK 1.8) 实现，保持逻辑完全一致，方便 Java 开发者学习。
+[**中文**](#中文) | [**English**](#english)
 
-**[English](#english-version)** | **中文**
+</div>
 
-## 项目简介
+---
 
-本项目是对 [shareAI-lab/learn-claude-code](https://github.com/shareAI-lab/learn-claude-code) 的 Java 重写版本，旨在帮助 Java 开发者深入理解 AI Agent 的工作原理。
+## 中文
 
-### 原项目致谢
+### 💡 这是什么？
 
-本项目基于以下开源项目改造：
+很多人用 Claude Code、Cursor、Copilot，却不知道它们是怎么工作的。
 
-- **原项目**: [shareAI-lab/learn-claude-code](https://github.com/shareAI-lab/learn-claude-code)
-- **原作者**: shareAI Lab
-- **原项目协议**: MIT License
+这个项目用 **Java 1.8**，把 AI Agent 的核心机制拆解成 12 节递进的课程——从最简单的 while 循环开始，一步步加入工具调用、子 Agent、多 Agent 协作……直到你能自己造一个。
 
-本仓库遵循相同的 MIT 开源协议，在保留原作者版权声明的基础上进行了 Java 重写和功能扩展。
-
-## 核心理念
-
-```
-模型是驾驶者，Harness 是载具。
-
-Agent 是模型。不是框架。不是提示词链。不是拖拽式工作流。
-```
-
-Claude Code 的本质就是一个 **while 循环**：
+**没有魔法，没有黑箱。** 所有秘密都在这个循环里：
 
 ```java
+// 这就是 Claude Code 的全部本质
 while ("tool_use".equals(stopReason)) {
     response = client.createMessage(system, messages, tools, maxTokens);
-    executeTools(response);
-    appendResults(messages);
+    executeTools(response);   // 执行工具
+    appendResults(messages);  // 结果追加回对话
 }
+// 12 节课只是往这个循环里加东西，循环本身从未改变
 ```
 
-12 节课逐步增加能力，但循环本身从未改变。
+> 本项目是 [shareAI-lab/learn-claude-code](https://github.com/shareAI-lab/learn-claude-code)（Python 版）的 Java 重写，
+> 保留原版逻辑，新增**交互式可视化教学页面**，专为 Java 开发者打造。
 
-## 可视化教学
+---
 
-打开 `docs/diagrams/index.html` 查看交互式可视化教学页面，包含：
+### ✨ 为什么选这个项目？
 
-- 架构全景图
-- 每节课的流程图和代码对照
-- Anthropic Messages API 完整字段说明
+| | 说明 |
+|--|------|
+| 🎯 **目标明确** | 不是 AI 应用开发框架，是教你 Agent 底层原理的教程 |
+| ☕ **Java 原生** | JDK 1.8，无 lambda，无 Stream API，最广泛的兼容性 |
+| 📦 **极简依赖** | 只有 Gson，HTTP 用原生 `HttpURLConnection`，不引入任何 AI SDK |
+| 🏃 **每课即跑** | 每个 `SxxXxx.java` 有独立 `main()`，clone 下来就能运行 |
+| 📈 **渐进式** | 12 课只加不改，始终看得清每一层在做什么 |
+| 🌐 **双语注释** | 所有源码包含中文 + 英文注释，方便国际交流 |
+| 🖼️ **可视化** | 配套 14 张交互式 SVG 架构图，每节课一张 |
 
-## 课程目录
+---
 
-| 编号 | 课程 | 核心概念 | 新增内容 |
-|------|------|----------|----------|
-| S00 | Prerequisites | Anthropic Messages API | 请求/响应字段说明 |
-| S01 | Agent Loop | while 循环 | 1 个工具 (bash) |
-| S02 | Tool Use | 分派表模式 | +3 个工具 (read/write/edit) |
-| S03 | TodoWrite | 自我跟踪 | TodoManager + Nag 提醒 |
-| S04 | Subagent | 上下文隔离 | 子代理 (fresh messages=[]) |
-| S05 | Skill Loading | 按需加载 | 两层注入 (目录→load_skill) |
-| S06 | Context Compact | 策略性遗忘 | 三层压缩管道 |
-| S07 | Task System | 持久化状态 | JSON 文件 + 依赖图 |
-| S08 | Background Tasks | 异步执行 | 线程池 + 通知注入 |
-| S09 | Agent Teams | 多 Agent 协作 | JSONL 消息总线 |
-| S10 | Team Protocols | 协议模式 | request_id 关联 (关闭/审批) |
-| S11 | Autonomous Agents | 自主行为 | 空闲轮询 + 自动认领 |
-| S12 | Worktree Isolation | 目录级隔离 | Git Worktree + 双平面架构 |
+### 🗺️ 课程地图
 
-## 项目结构
+```
+S00  Prerequisites      ──  了解 Anthropic Messages API 的请求/响应结构
+ │
+S01  Agent Loop         ──  第一个 while 循环 + bash 工具
+ │
+S02  Tool Use           ──  分派表模式，扩展到 4 个工具（read/write/edit/bash）
+ │
+S03  TodoWrite          ──  Agent 自我跟踪任务，TodoManager + Nag 提醒机制
+ │
+S04  Subagent           ──  子 Agent，用全新的 messages=[] 隔离上下文
+ │
+S05  Skill Loading      ──  技能按需加载，两层注入（目录扫描 → load_skill）
+ │
+S06  Context Compact    ──  策略性遗忘，三层压缩管道控制 token 消耗
+ │
+S07  Task System        ──  持久化任务状态，JSON 文件 + 依赖图
+ │
+S08  Background Tasks   ──  异步并发，线程池 + 通知注入
+ │
+S09  Agent Teams        ──  多 Agent 协作，JSONL 消息总线
+ │
+S10  Team Protocols     ──  关闭/审批协议，request_id 关联
+ │
+S11  Autonomous Agents  ──  自主行为，空闲轮询 + 任务自动认领
+ │
+S12  Worktree Isolation ──  目录级隔离，Git Worktree + 双平面架构
+```
+
+---
+
+### 📁 项目结构
 
 ```
 learn_claude_code_by_java/
-├── pom.xml                          # Maven 配置 (JDK 1.8 + Gson)
+├── pom.xml                              # Maven 配置（JDK 1.8 + Gson）
 ├── src/main/java/learn/claude/code/
 │   ├── common/
-│   │   ├── AnthropicClient.java     # API 客户端 (原生 HttpURLConnection)
-│   │   ├── BaseTools.java           # 4 个基础工具 (bash/read/write/edit)
-│   │   └── ToolHandler.java         # 工具处理器函数式接口
-│   ├── s01_agent_loop/              # 课程 01: Agent Loop
-│   ├── s02_tool_use/                # 课程 02: Tool Use
-│   ├── s03_todo_write/              # 课程 03: TodoWrite
-│   ├── s04_subagent/                # 课程 04: Subagent
-│   ├── s05_skill_loading/           # 课程 05: Skill Loading
-│   ├── s06_context_compact/         # 课程 06: Context Compact
-│   ├── s07_task_system/             # 课程 07: Task System
-│   ├── s08_background_tasks/        # 课程 08: Background Tasks
-│   ├── s09_agent_teams/             # 课程 09: Agent Teams
-│   ├── s10_team_protocols/          # 课程 10: Team Protocols
-│   ├── s11_autonomous_agents/       # 课程 11: Autonomous Agents
-│   └── s12_worktree_task_isolation/ # 课程 12: Worktree Isolation
+│   │   ├── AnthropicClient.java         # API 客户端（原生 HttpURLConnection）
+│   │   ├── BaseTools.java               # 4 个基础工具（bash/read/write/edit）
+│   │   └── ToolHandler.java             # 工具处理器函数式接口
+│   ├── s01_agent_loop/                  # 课程 01 ～
+│   ├── s02_tool_use/                    # 课程 02 ～
+│   ├── ...                              # 以此类推
+│   └── s12_worktree_task_isolation/     # 课程 12
 ├── src/main/resources/
-│   ├── claude.properties            # API 配置文件
-│   └── skills/                      # S05 的技能文件
-└── docs/diagrams/                   # 可视化教学页面 (HTML)
+│   ├── claude.properties.example        # 配置模板（复制后填入 Key）
+│   └── skills/                          # S05 技能文件
+└── docs/diagrams/                       # 14 张交互式可视化教学页面
+    ├── index.html                        # 总览入口
+    └── s01_agent_loop.html ～ s12_*.html
 ```
 
-## 快速开始
+---
 
-### 1. 环境要求
+### 🚀 快速开始
 
-- JDK 1.8+
-- Maven 3.x
-- 一个兼容 Anthropic Messages API 的 API Key
+**第一步：克隆 & 配置**
 
-### 2. 配置 API
+```bash
+git clone https://github.com/arrayadd/learn_claude_code_by_java.git
+cd learn_claude_code_by_java
 
-编辑 `src/main/resources/claude.properties`：
+# 复制配置模板
+cp src/main/resources/claude.properties.example \
+   src/main/resources/claude.properties
+```
+
+编辑 `claude.properties`，填入你的 API Key：
 
 ```properties
 ANTHROPIC_API_KEY=你的API密钥
-ANTHROPIC_BASE_URL=https://api.anthropic.com
+ANTHROPIC_BASE_URL=https://api.anthropic.com   # 或第三方兼容地址
 MODEL_ID=claude-sonnet-4-20250514
 ```
 
-> 支持任何兼容 Anthropic Messages API 的服务商（如智谱 GLM、第三方代理等）。
+> 💡 支持任何兼容 Anthropic Messages API 的服务商，包括智谱 GLM 等第三方代理。
 
-### 3. 编译
+**第二步：编译**
 
 ```bash
 mvn compile
 ```
 
-### 4. 运行任意课程
+**第三步：运行任意一课**
 
-每个课程都有独立的 `main` 方法，可直接运行，然后对话。
+在 IDE 里直接运行对应课程的 `main()` 方法，或用命令行：
 
-## 设计原则
+```bash
+# 以 S01 为例
+mvn exec:java -Dexec.mainClass="learn.claude.code.s01_agent_loop.S01AgentLoop"
+```
 
-| 原则 | 说明 |
-|------|------|
-| **JDK 1.8 兼容** | 不用 `var`、`List.of()`、lambda（用匿名内部类） |
-| **零第三方依赖** | 仅 Gson (JSON)，HTTP 用原生 `HttpURLConnection` |
-| **每课独立可运行** | 每个 `SxxXxx.java` 有自己的 `main` 方法 |
-| **渐进式复杂度** | 后续课程在前面基础上只增不改核心循环 |
-| **中英双语注释** | 所有源码包含详细的中文 + 英文注释 |
+运行后在终端输入你的指令，开始对话！
 
-## 与原项目的差异
+**第四步：查看可视化教学**
 
-| 项目 | 原项目 (Python) | 本项目 (Java) |
-|------|----------------|---------------|
-| 语言 | Python 3.x | Java 1.8 |
-| HTTP 客户端 | httpx / requests | HttpURLConnection |
-| JSON 库 | 内置 json | Gson |
-| 异步 | asyncio | Thread + ExecutorService |
-| 配置 | .env | claude.properties |
-| 可视化 | 无 | HTML 交互式教学页面 |
-
-## 贡献指南
-
-欢迎提交 Issue 和 Pull Request！
-
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 创建 Pull Request
-
-## 开源协议
-
-本项目采用 [MIT License](LICENSE) 开源协议。
-
-### 版权声明
-
-| 项目 | 版权所有者 | 年份 |
-|------|-----------|------|
-| 原项目 (Python) | shareAI Lab | 2024 |
-| Java 版本 | arrayadd | 2025 |
-
-本项目基于 [shareAI-lab/learn-claude-code](https://github.com/shareAI-lab/learn-claude-code) 进行 Java 重写，
-遵循 MIT 协议，保留原作者版权声明。
-
-### 第三方依赖
-
-| 依赖 | 协议 | 用途 |
-|------|------|------|
-| [Gson](https://github.com/google/gson) | Apache 2.0 | JSON 序列化 |
-
-## 致谢
-
-- 原版 Python 教程：[shareAI-lab/learn-claude-code](https://github.com/shareAI-lab/learn-claude-code)
-- Anthropic Claude: [anthropic.com](https://www.anthropic.com)
+用浏览器打开 `docs/diagrams/index.html`，14 张交互式架构图逐课讲解每个概念。
 
 ---
 
-如果这个项目对你有帮助，欢迎 Star ⭐
+### 🆚 与原 Python 版的差异
+
+| 对比项 | 原项目 (Python) | 本项目 (Java) |
+|--------|----------------|---------------|
+| 语言 | Python 3.x | **Java 1.8** |
+| HTTP 客户端 | httpx / requests | HttpURLConnection（原生） |
+| JSON 处理 | 内置 json 模块 | Gson |
+| 异步模型 | asyncio | Thread + ExecutorService |
+| 配置方式 | .env 文件 | claude.properties |
+| 可视化教学 | 无 | **14 张交互式 HTML 图表** ✨ |
 
 ---
 
-## English Version
+### 🤝 参与贡献
 
-> **12 lessons to deconstruct the secrets of AI Agents from scratch, build your own Claude Code**
->
-> Java (JDK 1.8) implementation, keeping logic fully consistent for Java developers.
+欢迎任何形式的贡献！
 
-### About This Project
+- 🐛 **发现 Bug** → [提 Issue](https://github.com/arrayadd/learn_claude_code_by_java/issues)
+- 💡 **有新想法** → [发起讨论](https://github.com/arrayadd/learn_claude_code_by_java/discussions)
+- 🔧 **想改代码** → Fork → 新建分支 → 提 PR
 
-This is a Java rewrite of [shareAI-lab/learn-claude-code](https://github.com/shareAI-lab/learn-claude-code),
-designed to help Java developers deeply understand how AI Agents work.
+贡献前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-### Key Features
+---
 
-- **JDK 1.8 Compatible**: No modern Java features, maximum compatibility
-- **Minimal Dependencies**: Only Gson for JSON, native HttpURLConnection for HTTP
-- **Bilingual Comments**: Chinese + English comments in all source files
-- **Interactive Visualization**: HTML-based teaching diagrams in `docs/diagrams/`
+### 📄 开源协议
 
-### Quick Start
+本项目采用 [MIT License](LICENSE) 开源。
 
-1. **Requirements**: JDK 1.8+, Maven 3.x
-2. **Configure**: Copy `claude.properties.example` to `claude.properties` and add your API key
-3. **Build**: `mvn compile`
-4. **Run**: Each lesson has its own `main()` method
+原项目 [shareAI-lab/learn-claude-code](https://github.com/shareAI-lab/learn-claude-code) © 2024 shareAI Lab（MIT）
+Java 版本 © 2025 arrayadd（MIT）
 
-### License
+---
 
-This project is licensed under the [MIT License](LICENSE).
+<div align="center">
 
-### Acknowledgments
+如果这个项目对你有帮助，请点一个 ⭐ Star —— 这是对作者最大的鼓励！
 
-- Original Python tutorial: [shareAI-lab/learn-claude-code](https://github.com/shareAI-lab/learn-claude-code)
+</div>
+
+---
+
+## English
+
+### 💡 What is this?
+
+Many developers use Claude Code, Cursor, or Copilot every day — but few understand how they actually work under the hood.
+
+This project deconstructs the core mechanics of an AI Agent into **12 progressive lessons**, starting from a single `while` loop and building up to multi-agent collaboration, autonomous task execution, and worktree isolation — all in **Java 1.8**.
+
+**No magic. No black boxes.** Everything is this loop:
+
+```java
+// This is the entire soul of Claude Code
+while ("tool_use".equals(stopReason)) {
+    response = client.createMessage(system, messages, tools, maxTokens);
+    executeTools(response);   // run tools
+    appendResults(messages);  // feed results back
+}
+// All 12 lessons just add layers on top — the loop never changes
+```
+
+> This is a Java port of [shareAI-lab/learn-claude-code](https://github.com/shareAI-lab/learn-claude-code) (Python),
+> with identical logic, bilingual comments, and an added **interactive visualization layer**.
+
+---
+
+### ✨ Why this project?
+
+| | |
+|--|--|
+| 🎯 **Pure education** | Not a framework — a teardown of how agents actually work |
+| ☕ **Java 1.8 native** | No lambdas, no streams, maximum compatibility |
+| 📦 **Minimal deps** | Only Gson. HTTP via plain `HttpURLConnection`. Zero AI SDK. |
+| 🏃 **Run any lesson** | Every `SxxXxx.java` has its own `main()` — just run it |
+| 📈 **Progressive** | Each lesson adds one concept. The core loop never changes. |
+| 🌐 **Bilingual** | All source files have Chinese + English comments |
+| 🖼️ **Visual** | 14 interactive SVG diagrams — one per lesson |
+
+---
+
+### 🗺️ Curriculum
+
+| # | Lesson | Core Concept | What's Added |
+|---|--------|-------------|--------------|
+| S00 | Prerequisites | Anthropic Messages API | Request / response field walkthrough |
+| S01 | Agent Loop | The while loop | 1 tool (bash) |
+| S02 | Tool Use | Dispatch table pattern | +3 tools (read / write / edit) |
+| S03 | TodoWrite | Self-tracking | TodoManager + nag reminder |
+| S04 | Subagent | Context isolation | Sub-agent (fresh `messages=[]`) |
+| S05 | Skill Loading | On-demand loading | Two-layer injection (scan → load_skill) |
+| S06 | Context Compact | Strategic forgetting | Three-stage compression pipeline |
+| S07 | Task System | Persistent state | JSON files + dependency graph |
+| S08 | Background Tasks | Async execution | Thread pool + notification injection |
+| S09 | Agent Teams | Multi-agent collaboration | JSONL message bus |
+| S10 | Team Protocols | Protocol patterns | request_id correlation (shutdown / approve) |
+| S11 | Autonomous Agents | Self-directed behavior | Idle polling + auto task claiming |
+| S12 | Worktree Isolation | Directory-level isolation | Git Worktree + dual-plane architecture |
+
+---
+
+### 🚀 Quick Start
+
+```bash
+git clone https://github.com/arrayadd/learn_claude_code_by_java.git
+cd learn_claude_code_by_java
+
+# Copy config template
+cp src/main/resources/claude.properties.example \
+   src/main/resources/claude.properties
+
+# Edit and fill in your API key
+# Then build:
+mvn compile
+
+# Run any lesson (e.g. S01):
+mvn exec:java -Dexec.mainClass="learn.claude.code.s01_agent_loop.S01AgentLoop"
+```
+
+Open `docs/diagrams/index.html` in a browser for the interactive lesson diagrams.
+
+---
+
+### 📄 License
+
+[MIT License](LICENSE) — © 2025 arrayadd
+Based on [shareAI-lab/learn-claude-code](https://github.com/shareAI-lab/learn-claude-code) © 2024 shareAI Lab (MIT)
+
+---
+
+<div align="center">
+
+Found this useful? A ⭐ Star means a lot!
+
+</div>

@@ -5,7 +5,7 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [1.0.0] - 2025-01-XX
+## [1.0.0] - 2026-03-22
 
 ### 新增
 - Java 1.8 完整实现，对应原 Python 版 12 节课程
