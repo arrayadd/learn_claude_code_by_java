@@ -8,6 +8,7 @@
 [![Java](https://img.shields.io/badge/Java-1.8+-orange.svg)](https://www.oracle.com/java/)
 [![Stars](https://img.shields.io/github/stars/arrayadd/learn_claude_code_by_java?style=social)](https://github.com/arrayadd/learn_claude_code_by_java/stargazers)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![在线学习](https://img.shields.io/badge/在线学习-📖_可视化教学-blue)](https://arrayadd.github.io/learn_claude_code_by_java/)
 
 [**中文**](#中文) | [**English**](#english)
 
@@ -152,7 +153,9 @@ mvn exec:java -Dexec.mainClass="learn.claude.code.s01_agent_loop.S01AgentLoop"
 
 **第四步：查看可视化教学**
 
-用浏览器打开 `docs/diagrams/index.html`，14 张交互式架构图逐课讲解每个概念。
+🌐 **在线直接访问（无需克隆）**：[https://arrayadd.github.io/learn_claude_code_by_java/](https://arrayadd.github.io/learn_claude_code_by_java/)
+
+或本地打开 `docs/diagrams/index.html`，14 张交互式架构图逐课讲解每个概念。
 
 ---
 
@@ -275,7 +278,9 @@ mvn compile
 mvn exec:java -Dexec.mainClass="learn.claude.code.s01_agent_loop.S01AgentLoop"
 ```
 
-Open `docs/diagrams/index.html` in a browser for the interactive lesson diagrams.
+🌐 **Online demo (no clone needed)**: [https://arrayadd.github.io/learn_claude_code_by_java/](https://arrayadd.github.io/learn_claude_code_by_java/)
+
+Or open `docs/diagrams/index.html` locally for the interactive lesson diagrams.
 
 ---
 
