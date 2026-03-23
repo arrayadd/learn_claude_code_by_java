@@ -20,7 +20,7 @@
 
 ### 💡 这是什么？
 
-很多人用 Claude Code、Cursor、Copilot，却不知道它们是怎么工作的。
+很多人用 Claude Code、Cursor 却不知道它们是怎么工作的。
 
 这个项目用 **Java 1.8**，把 AI Agent 的核心机制拆解成 12 节递进的课程——从最简单的 while 循环开始，一步步加入工具调用、子 Agent、多 Agent 协作……直到你能自己造一个。
 
