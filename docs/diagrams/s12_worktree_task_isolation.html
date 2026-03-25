@@ -201,6 +201,86 @@ h1 {
 }
 .nav-bottom a { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--cyan); text-decoration: none; transition: color 0.2s; }
 .nav-bottom a:hover { color: var(--amber-light); }
+
+/* ---- Try It Out Section ---- */
+.try-section {
+  margin-bottom: 64px;
+}
+
+.try-section > h2 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 28px;
+  color: var(--text-primary);
+  margin-bottom: 32px;
+  padding-left: 16px;
+  border-left: 3px solid var(--cyan);
+}
+
+.try-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.try-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  padding: 20px 24px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.try-item:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-card-hover);
+  transform: translateX(4px);
+}
+
+.try-number {
+  font-family: var(--font-code);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--amber);
+  background: rgba(240, 180, 41, 0.1);
+  border: 1px solid rgba(240, 180, 41, 0.25);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.try-content {
+  flex: 1;
+}
+
+.try-content code {
+  font-family: var(--font-code);
+  font-size: 14px;
+  color: var(--cyan);
+  background: rgba(78, 205, 196, 0.08);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.try-run {
+  font-family: var(--font-code);
+  font-size: 12px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  display: inline-block;
+  border: 1px dashed rgba(240, 180, 41, 0.2);
+}
 </style>
 </head>
 <body>
@@ -437,6 +517,48 @@ h1 {
     <p><code>create</code> 创建 worktree，<code>bind</code> 绑定任务，<code>run</code> 执行代码，<code>test</code> 验证，<code>commit</code> 提交，最后 <code>keep</code>（保留分支）或 <code>remove</code>（清理）。</p>
   </div>
 </div>
+
+<!-- Try It Out -->
+<section class="try-section">
+  <h2>试一试 Try It Out</h2>
+  <div class="try-grid">
+    <div class="try-item">
+      <div class="try-number">1</div>
+      <div class="try-content">
+        <p>"为后端身份验证和前端登录页面创建任务，然后列出任务。"</p>
+        <p>"Create tasks for backend auth and frontend login page, then list tasks."</p>
+      </div>
+    </div>
+    <div class="try-item">
+      <div class="try-number">2</div>
+      <div class="try-content">
+        <p>"为任务 1 创建 worktree 'auth-refactor'，为任务 2 创建 worktree 'ui-login'。"</p>
+        <p>"Create worktree 'auth-refactor' for task 1, then bind task 2 to a new worktree 'ui-login'."</p>
+      </div>
+    </div>
+    <div class="try-item">
+      <div class="try-number">3</div>
+      <div class="try-content">
+        <p>"在 worktree 'auth-refactor' 中运行 'git status --short'。"</p>
+        <p>"Run 'git status --short' in worktree 'auth-refactor'."</p>
+      </div>
+    </div>
+    <div class="try-item">
+      <div class="try-number">4</div>
+      <div class="try-content">
+        <p>"保留 worktree 'ui-login'，然后列出 worktree 并检查事件。"</p>
+        <p>"Keep worktree 'ui-login', then list worktrees and inspect events."</p>
+      </div>
+    </div>
+    <div class="try-item">
+      <div class="try-number">5</div>
+      <div class="try-content">
+        <p>"使用 complete_task=true 删除 worktree 'auth-refactor'，然后列出任务/worktree/事件。"</p>
+        <p>"Remove worktree 'auth-refactor' with complete_task=true, then list tasks/worktrees/events."</p>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- Navigation -->
 <nav class="nav-hint" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">

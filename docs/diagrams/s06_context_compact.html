@@ -311,6 +311,86 @@ svg .mono { font-family: 'JetBrains Mono', monospace; }
   transform-origin: center center;
 }
 
+/* ---- Try It Out Section ---- */
+.try-section {
+  margin-bottom: 64px;
+}
+
+.try-section > h2 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 28px;
+  color: var(--text-primary);
+  margin-bottom: 32px;
+  padding-left: 16px;
+  border-left: 3px solid var(--cyan);
+}
+
+.try-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.try-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  padding: 20px 24px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.try-item:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-card-hover);
+  transform: translateX(4px);
+}
+
+.try-number {
+  font-family: var(--font-code);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--amber);
+  background: rgba(240, 180, 41, 0.1);
+  border: 1px solid rgba(240, 180, 41, 0.25);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.try-content {
+  flex: 1;
+}
+
+.try-content code {
+  font-family: var(--font-code);
+  font-size: 14px;
+  color: var(--cyan);
+  background: rgba(78, 205, 196, 0.08);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.try-run {
+  font-family: var(--font-code);
+  font-size: 12px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  display: inline-block;
+  border: 1px dashed rgba(240, 180, 41, 0.2);
+}
+
 @media (max-width: 768px) {
   .container { padding: 20px 12px 40px; }
   nav { flex-wrap: wrap; gap: 8px; justify-content: center; }
@@ -476,6 +556,34 @@ svg .mono { font-family: 'JetBrains Mono', monospace; }
     <p style="margin-top:10px;color:#c084fc;font-size:13px;font-family:'JetBrains Mono',monospace;">model-triggered, with custom summary</p>
   </div>
 </div>
+
+<!-- Try It Out -->
+<section class="try-section">
+  <h2>试一试 Try It Out</h2>
+  <div class="try-grid">
+    <div class="try-item">
+      <div class="try-number">1</div>
+      <div class="try-content">
+        <p>"逐个读取 src/ 目录下的所有 Java 文件（触发对旧结果的微压缩）"</p>
+        <p>"Read every Java file in the src/ directory one by one (triggers micro-compact on older results)"</p>
+      </div>
+    </div>
+    <div class="try-item">
+      <div class="try-number">2</div>
+      <div class="try-content">
+        <p>"持续读取文件，直到触发自动压缩"</p>
+        <p>"Keep reading files until compression triggers automatically"</p>
+      </div>
+    </div>
+    <div class="try-item">
+      <div class="try-number">3</div>
+      <div class="try-content">
+        <p>"使用 compact 工具手动压缩对话"</p>
+        <p>"Use the compact tool to manually compress the conversation"</p>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- Navigation -->
 <nav class="nav-hint" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">

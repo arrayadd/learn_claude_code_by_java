@@ -212,6 +212,86 @@ h1 {
 }
 .nav-bottom a { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--cyan); text-decoration: none; transition: color 0.2s; }
 .nav-bottom a:hover { color: var(--amber-light); }
+
+/* ---- Try It Out Section ---- */
+.try-section {
+  margin-bottom: 64px;
+}
+
+.try-section > h2 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 28px;
+  color: var(--text-primary);
+  margin-bottom: 32px;
+  padding-left: 16px;
+  border-left: 3px solid var(--cyan);
+}
+
+.try-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.try-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  padding: 20px 24px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.try-item:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-card-hover);
+  transform: translateX(4px);
+}
+
+.try-number {
+  font-family: var(--font-code);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--amber);
+  background: rgba(240, 180, 41, 0.1);
+  border: 1px solid rgba(240, 180, 41, 0.25);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.try-content {
+  flex: 1;
+}
+
+.try-content code {
+  font-family: var(--font-code);
+  font-size: 14px;
+  color: var(--cyan);
+  background: rgba(78, 205, 196, 0.08);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.try-run {
+  font-family: var(--font-code);
+  font-size: 12px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  display: inline-block;
+  border: 1px dashed rgba(240, 180, 41, 0.2);
+}
 </style>
 </head>
 <body>
@@ -362,6 +442,48 @@ h1 {
     <p>当上下文被压缩（compact）后，Agent 可能忘记自己是谁。此时需要重新注入身份信息：名字、角色、收件箱路径、当前任务 ID。这样 Agent 能无缝继续工作。</p>
   </div>
 </div>
+
+<!-- Try It Out -->
+<section class="try-section">
+  <h2>试一试 Try It Out</h2>
+  <div class="try-grid">
+    <div class="try-item">
+      <div class="try-number">1</div>
+      <div class="try-content">
+        <p>"创建多个任务，生成 Agent 观察它们自我分配工作"</p>
+        <p>"Create multiple tasks and spawn agents to watch them self-assign work"</p>
+      </div>
+    </div>
+    <div class="try-item">
+      <div class="try-number">2</div>
+      <div class="try-content">
+        <p>"生成单个 Agent 独立发现任务"</p>
+        <p>"Spawn individual agents to discover tasks independently"</p>
+      </div>
+    </div>
+    <div class="try-item">
+      <div class="try-number">3</div>
+      <div class="try-content">
+        <p>"测试基于依赖关系的任务排序"</p>
+        <p>"Test dependency-based task ordering"</p>
+      </div>
+    </div>
+    <div class="try-item">
+      <div class="try-number">4</div>
+      <div class="try-content">
+        <p>"使用 /tasks 查看所有权状态"</p>
+        <p>"Use /tasks to view ownership status"</p>
+      </div>
+    </div>
+    <div class="try-item">
+      <div class="try-number">5</div>
+      <div class="try-content">
+        <p>"使用 /team 监控 Agent 活动状态"</p>
+        <p>"Use /team to monitor agent activity states"</p>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- Navigation -->
 <nav class="nav-hint" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">

@@ -302,6 +302,86 @@ h1 {
 .nav-bottom a:hover {
   color: var(--amber-light);
 }
+
+/* ---- Try It Out Section ---- */
+.try-section {
+  margin-bottom: 64px;
+}
+
+.try-section > h2 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 28px;
+  color: var(--text-primary);
+  margin-bottom: 32px;
+  padding-left: 16px;
+  border-left: 3px solid var(--cyan);
+}
+
+.try-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.try-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  padding: 20px 24px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.try-item:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-card-hover);
+  transform: translateX(4px);
+}
+
+.try-number {
+  font-family: var(--font-code);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--amber);
+  background: rgba(240, 180, 41, 0.1);
+  border: 1px solid rgba(240, 180, 41, 0.25);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.try-content {
+  flex: 1;
+}
+
+.try-content code {
+  font-family: var(--font-code);
+  font-size: 14px;
+  color: var(--cyan);
+  background: rgba(78, 205, 196, 0.08);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.try-run {
+  font-family: var(--font-code);
+  font-size: 12px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  display: inline-block;
+  border: 1px dashed rgba(240, 180, 41, 0.2);
+}
 </style>
 </head>
 <body>
@@ -477,6 +557,48 @@ h1 {
     <p>通信协议精简为 5 种类型：<code>message</code>（点对点）、<code>broadcast</code>（广播）、<code>shutdown_request</code> / <code>shutdown_response</code>（关闭协商）、<code>plan_approval</code>（计划审批）。</p>
   </div>
 </div>
+
+<!-- Try It Out -->
+<section class="try-section">
+  <h2>试一试 Try It Out</h2>
+  <div class="try-grid">
+    <div class="try-item">
+      <div class="try-number">1</div>
+      <div class="try-content">
+        <p>"生成具有特定角色的命名队友"</p>
+        <p>"Spawn named teammates with specific roles"</p>
+      </div>
+    </div>
+    <div class="try-item">
+      <div class="try-number">2</div>
+      <div class="try-content">
+        <p>"向整个团队广播消息"</p>
+        <p>"Broadcast messages across the team"</p>
+      </div>
+    </div>
+    <div class="try-item">
+      <div class="try-number">3</div>
+      <div class="try-content">
+        <p>"检查单个 Agent 的收件箱"</p>
+        <p>"Check individual agent inboxes"</p>
+      </div>
+    </div>
+    <div class="try-item">
+      <div class="try-number">4</div>
+      <div class="try-content">
+        <p>"使用 /team 命令查看名册和状态"</p>
+        <p>"Use /team command to view roster and statuses"</p>
+      </div>
+    </div>
+    <div class="try-item">
+      <div class="try-number">5</div>
+      <div class="try-content">
+        <p>"使用 /inbox 手动检查消息"</p>
+        <p>"Use /inbox to manually inspect messages"</p>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- Navigation -->
 <nav class="nav-hint" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">

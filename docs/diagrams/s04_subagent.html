@@ -418,6 +418,74 @@
     box-shadow: var(--glow-amber);
   }
 
+  /* ---- Try It Out Section ---- */
+  .try-section {
+    margin-bottom: 64px;
+  }
+
+  .try-section > h2 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 28px;
+    color: var(--text-primary);
+    margin-bottom: 32px;
+    padding-left: 16px;
+    border-left: 3px solid var(--cyan);
+  }
+
+  .try-grid {
+    display: grid;
+    gap: 16px;
+  }
+
+  .try-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 12px;
+    padding: 20px 24px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .try-item:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-card-hover);
+    transform: translateX(4px);
+  }
+
+  .try-number {
+    font-family: var(--font-code);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--amber);
+    background: rgba(240, 180, 41, 0.1);
+    border: 1px solid rgba(240, 180, 41, 0.25);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .try-content {
+    flex: 1;
+  }
+
+  .try-content code {
+    font-family: var(--font-code);
+    font-size: 14px;
+    color: var(--cyan);
+    background: rgba(78, 205, 196, 0.08);
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
   @media (max-width: 640px) {
     .container { padding: 32px 16px 60px; }
     .cards-grid { grid-template-columns: 1fr; }
@@ -662,6 +730,34 @@
           </tr>
         </tbody>
       </table>
+    </div>
+  </section>
+
+  <!-- Try It Out -->
+  <section class="try-section">
+    <h2>试一试 Try It Out</h2>
+    <div class="try-grid">
+      <div class="try-item">
+        <div class="try-number">1</div>
+        <div class="try-content">
+          <p>"使用子任务找出这个项目使用什么测试框架"</p>
+          <p>"Use a subtask to find what testing framework this project uses"</p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div class="try-number">2</div>
+        <div class="try-content">
+          <p>"委托：读取所有 .java 文件并总结每个文件的作用"</p>
+          <p>"Delegate: read all .java files and summarize what each one does"</p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div class="try-number">3</div>
+        <div class="try-content">
+          <p>"使用任务创建一个新模块，然后从这里验证它"</p>
+          <p>"Use a task to create a new module, then verify it from here"</p>
+        </div>
+      </div>
     </div>
   </section>
 
